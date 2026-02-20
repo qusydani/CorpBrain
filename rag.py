@@ -49,6 +49,7 @@ class MultimodalRAGChain:
         
         text_context = ""
         image_blocks = []
+        seen_images = set()
         
         # 4. Separate text and images
         for doc in docs:
@@ -57,7 +58,10 @@ class MultimodalRAGChain:
             # If the database pulled an image summary, grab the actual image file
             if doc.metadata.get("type") == "image_summary" and "image_path" in doc.metadata:
                 img_path = doc.metadata["image_path"]
-                if os.path.exists(img_path):
+
+                # Only process the image if we haven't seen it yet in this loop
+                if img_path not in seen_images and os.path.exists(img_path):
+                    seen_images.add(img_path) # Mark as seen
                     encoded_img = self._encode_image(img_path)
                     image_blocks.append(
                         {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded_img}"}}

@@ -56,6 +56,14 @@ def create_multimodal_vector_db():
             for page_num in range(doc.page_count):
                 page = doc.load_page(page_num)
                 
+                # Extract raw text
+                raw_text = page.get_text()
+                # Save the raw text as a standard document chunk
+                documents.append(Document(
+                    page_content=raw_text, 
+                    metadata={"source": file, "page": page_num + 1, "type": "text"}
+                ))
+
                 # Render page to a high-res image
                 pix = page.get_pixmap(dpi=150) 
                 image_filename = f"{file}_page_{page_num + 1}.png"
