@@ -9,3 +9,5 @@ dist/
 *.pyc
 *.bin
 *.sqlite3
+*.png
+*.pickle
