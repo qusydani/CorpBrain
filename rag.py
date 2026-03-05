@@ -1,5 +1,7 @@
 import os
 import base64
+import io
+from PIL import Image
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_anthropic import ChatAnthropic
@@ -28,20 +30,28 @@ class MultimodalRAGChain:
             Document(page_content=txt, metadata=meta)
             for txt, meta in zip(db_data["documents"], db_data["metadatas"])
         ]
-        bm25_retriever = BM25Retriever.from_documents(docs_for_bm25)
-        bm25_retriever.k = 5
 
-        self.retriever = EnsembleRetriever(
-            retrievers=[vector_retriever, bm25_retriever],
-            weights=[0.5, 0.5],
-        )
+        if docs_for_bm25:
+            bm25_retriever = BM25Retriever.from_documents(docs_for_bm25)
+            bm25_retriever.k = 5
+            self.retriever = EnsembleRetriever(
+                retrievers=[vector_retriever, bm25_retriever],
+                weights=[0.5, 0.5],
+            )
+        else:
+            print("No documents in DB yet — using vector retriever only.")
+            self.retriever = vector_retriever
 
         # 2. Setup Vision-Capable LLM
         self.llm = ChatAnthropic(model="claude-sonnet-4-6", temperature=0)
 
-    def _encode_image(self, image_path):
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode("utf-8")
+    def _encode_image(self, image_path: str) -> tuple:
+        """Compress PNG to JPEG in-memory and return (base64_string, media_type)."""
+        img = Image.open(image_path).convert("RGB")
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=85)
+        encoded = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        return encoded, "image/jpeg"
 
     def _build_message(self, user_query, docs, chat_history):
         """Build the multimodal HumanMessage from retrieved docs and chat history."""
@@ -56,13 +66,13 @@ class MultimodalRAGChain:
                 img_path = doc.metadata["image_path"]
                 if img_path not in seen_images and os.path.exists(img_path):
                     seen_images.add(img_path)
-                    encoded_img = self._encode_image(img_path)
+                    encoded_img, media_type = self._encode_image(img_path)
                     image_blocks.append(
                         {
                             "type": "image",
                             "source": {
                                 "type": "base64",
-                                "media_type": "image/png",
+                                "media_type": media_type,
                                 "data": encoded_img,
                             },
                         }
@@ -100,7 +110,7 @@ class MultimodalRAGChain:
     def stream(self, query_dict):
         """
         Returns (docs, answer_generator).
-        Retrieval is done eagerly so the caller can show sources immediately;
+        Retrieval is done eagerly so the caller can show sources immediately,
         the answer is streamed token-by-token.
         """
         user_query = query_dict["input"]

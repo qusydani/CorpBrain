@@ -11,3 +11,6 @@ dist/
 *.sqlite3
 *.png
 *.pickle
+vector_db/
+data/
+extracted_images/
