@@ -31,33 +31,52 @@ if prompt := st.chat_input("Ask a question about the uploaded documents..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # Build chat history for memory (exclude image paths — text only)
+    chat_history = [
+        {"role": m["role"], "content": m["content"]}
+        for m in st.session_state.messages[:-1]  # exclude the message we just appended
+    ]
+
     # Generate Response
     with st.chat_message("assistant"):
-        with st.spinner("Searching knowledge base and analyzing images..."):
-            response = st.session_state.chain.invoke({"input": prompt})
-            answer = response["answer"]
-            docs = response["context"]
-            
-            # Separate text sources from image paths based on metadata
-            text_sources = list(set([doc.metadata.get('source', 'Unknown') for doc in docs if doc.metadata.get('type') != 'image_summary']))
-            image_paths = list(set([doc.metadata.get('image_path') for doc in docs if doc.metadata.get('type') == 'image_summary']))
-            
-            # 1. Print Text Answer
-            full_response = f"{answer}\n\n**Text Sources:**\n" + "\n".join([f"- {s}" for s in text_sources])
-            st.markdown(full_response)
-            
-            # 2. Render Retrieved Images
-            valid_images = []
-            if image_paths:
-                st.markdown("**Referenced Diagrams:**")
-                for img_path in image_paths:
-                    if img_path and os.path.exists(img_path):
-                        st.image(img_path, caption=os.path.basename(img_path))
-                        valid_images.append(img_path)
-            
-    # Save the response and the image file paths to session state
+        with st.spinner("Retrieving context..."):
+            docs, answer_stream = st.session_state.chain.stream({
+                "input": prompt,
+                "chat_history": chat_history,
+            })
+
+        # Separate text sources from image paths
+        text_sources = list(set([
+            doc.metadata.get("source", "Unknown")
+            for doc in docs
+            if doc.metadata.get("type") != "image_summary"
+        ]))
+        image_paths = list(set([
+            doc.metadata.get("image_path")
+            for doc in docs
+            if doc.metadata.get("type") == "image_summary"
+        ]))
+
+        # 1. Stream the answer
+        answer = st.write_stream(answer_stream)
+
+        # 2. Show text sources
+        sources_md = "\n\n**Text Sources:**\n" + "\n".join([f"- {s}" for s in text_sources])
+        st.markdown(sources_md)
+        full_response = answer + sources_md
+
+        # 3. Render retrieved images
+        valid_images = []
+        if image_paths:
+            st.markdown("**Referenced Diagrams:**")
+            for img_path in image_paths:
+                if img_path and os.path.exists(img_path):
+                    st.image(img_path, caption=os.path.basename(img_path))
+                    valid_images.append(img_path)
+
+    # Save to session state
     st.session_state.messages.append({
-        "role": "assistant", 
+        "role": "assistant",
         "content": full_response,
-        "images": valid_images
+        "images": valid_images,
     })

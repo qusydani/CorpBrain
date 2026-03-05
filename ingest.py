@@ -5,7 +5,8 @@ import fitz
 from dotenv import load_dotenv
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+from langchain_anthropic import ChatAnthropic
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.messages import HumanMessage
 from langchain_chroma import Chroma
 
@@ -16,22 +17,29 @@ DB_PATH = "vector_db"
 IMAGE_OUT_PATH = "extracted_images/"
 
 def summarize_page_image(image_path):
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite", temperature=0)
-    
+    llm = ChatAnthropic(model="claude-haiku-4-5-20251001", temperature=0)
+
     with open(image_path, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
-        
+
     prompt = (
-        "You are an expert technical manual reader. Describe this page in extreme detail. "
-        "If there are diagrams (like steering locks, ignition switches, or part assemblies), "
-        "explain exactly how they work, the numbered steps, and any explicit warnings. "
-        "Do not miss any text labels or part numbers."
+        "You are an expert document analyst. Describe this page in thorough detail. "
+        "Extract all visible text verbatim. If there are diagrams, charts, tables, or figures, "
+        "explain what they depict, how components relate, and any labels, legends, or annotations. "
+        "Capture all numbered steps, warnings, callouts, and part references exactly as written."
     )
-    
+
     message = HumanMessage(
         content=[
             {"type": "text", "text": prompt},
-            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded_string}"}}
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": encoded_string,
+                },
+            },
         ]
     )
     
