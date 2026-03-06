@@ -10,11 +10,13 @@ from langchain_community.retrievers import BM25Retriever
 from langchain_classic.retrievers import EnsembleRetriever
 from langchain_core.messages import HumanMessage
 from langchain_core.documents import Document
+from sentence_transformers import CrossEncoder
 
 load_dotenv()
 
 DB_PATH = "vector_db"
-MEMORY_TURNS = 3  # Number of prior conversation turns to include
+MEMORY_TURNS = 3   # Number of prior conversation turns to include
+RERANK_TOP_N = 5   # Docs to keep after reranking and pass to Claude
 
 
 class MultimodalRAGChain:
@@ -22,7 +24,7 @@ class MultimodalRAGChain:
         # 1. Setup Retrievers
         embedding_model = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
         vector_db = Chroma(persist_directory=DB_PATH, embedding_function=embedding_model)
-        vector_retriever = vector_db.as_retriever(search_kwargs={"k": 5})
+        vector_retriever = vector_db.as_retriever(search_kwargs={"k": 10})
 
         print("Building Keyword Index...")
         db_data = vector_db.get()
@@ -33,7 +35,7 @@ class MultimodalRAGChain:
 
         if docs_for_bm25:
             bm25_retriever = BM25Retriever.from_documents(docs_for_bm25)
-            bm25_retriever.k = 5
+            bm25_retriever.k = 10
             self.retriever = EnsembleRetriever(
                 retrievers=[vector_retriever, bm25_retriever],
                 weights=[0.5, 0.5],
@@ -42,7 +44,11 @@ class MultimodalRAGChain:
             print("No documents in DB yet — using vector retriever only.")
             self.retriever = vector_retriever
 
-        # 2. Setup Vision-Capable LLM
+        # 2. Setup Reranker (local, no API cost)
+        print("Loading reranker...")
+        self.reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+
+        # 3. Setup Vision-Capable LLM
         self.llm = ChatAnthropic(model="claude-sonnet-4-6", temperature=0)
 
     def _encode_image(self, image_path: str) -> tuple:
@@ -103,9 +109,20 @@ class MultimodalRAGChain:
 
         return HumanMessage(content=message_content)
 
+    def _rerank(self, query: str, docs: list) -> list:
+        """
+        Score every (query, doc) pair jointly with the cross-encoder.
+        Returns the top RERANK_TOP_N docs sorted by relevance score.
+        """
+        pairs = [(query, doc.page_content) for doc in docs]
+        scores = self.reranker.predict(pairs)
+        ranked = sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
+        return [doc for _, doc in ranked[:RERANK_TOP_N]]
+
     def retrieve(self, user_query):
-        """Retrieve relevant docs for a query."""
-        return self.retriever.invoke(user_query)
+        """Stage 1: hybrid retrieval. Stage 2: cross-encoder reranking."""
+        candidates = self.retriever.invoke(user_query)  # 20 candidates
+        return self._rerank(user_query, candidates)      # top 5
 
     def stream(self, query_dict):
         """
