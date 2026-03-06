@@ -2,6 +2,7 @@ import os
 import base64
 import hashlib
 import io
+import json
 import fitz
 import chromadb
 from PIL import Image
@@ -19,11 +20,59 @@ DATA_PATH = "data/"
 DB_PATH = "vector_db"
 IMAGE_OUT_PATH = "extracted_images/"
 CHROMA_COLLECTION = "langchain"
+CONTEXT_CACHE_PATH = os.path.join(IMAGE_OUT_PATH, "chunk_contexts.json")
 
+
+# ── Hashing ───────────────────────────────────────────────────────────────────
 
 def compute_file_hash(file_bytes: bytes) -> str:
     """MD5 hash of file bytes — used as the deduplication key."""
     return hashlib.md5(file_bytes).hexdigest()
+
+
+def _chunk_hash(text: str) -> str:
+    """MD5 hash of chunk text — used as the context cache key."""
+    return hashlib.md5(text.encode("utf-8")).hexdigest()
+
+
+# ── Context cache ─────────────────────────────────────────────────────────────
+
+def load_context_cache() -> dict:
+    """Load the chunk context cache from disk."""
+    if os.path.exists(CONTEXT_CACHE_PATH):
+        with open(CONTEXT_CACHE_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
+def save_context_cache(cache: dict):
+    """Persist the chunk context cache to disk."""
+    os.makedirs(IMAGE_OUT_PATH, exist_ok=True)
+    with open(CONTEXT_CACHE_PATH, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+
+
+# ── ChromaDB queries ──────────────────────────────────────────────────────────
+
+def get_ingested_files(db_path: str = DB_PATH) -> dict:
+    """
+    Return {filename: page_count} for every document already in ChromaDB.
+    Page count is derived from the highest page number seen in text chunks.
+    """
+    try:
+        client = chromadb.PersistentClient(path=db_path)
+        collection = client.get_collection(CHROMA_COLLECTION)
+        result = collection.get(include=["metadatas"])
+        page_counts = {}
+        for meta in result["metadatas"]:
+            if meta and meta.get("type") == "text" and "source" in meta:
+                source = meta["source"]
+                page = meta.get("page", 0)
+                if source not in page_counts or page > page_counts[source]:
+                    page_counts[source] = page
+        return dict(sorted(page_counts.items()))
+    except Exception:
+        return {}
 
 
 def get_existing_hashes(db_path: str = DB_PATH) -> set:
@@ -44,9 +93,11 @@ def get_existing_hashes(db_path: str = DB_PATH) -> set:
         return set()
 
 
+# ── Image helpers ─────────────────────────────────────────────────────────────
+
 def _compress_image_for_api(image_path: str) -> tuple:
     """
-    Compress a PNG to JPEG in-memory to stay under limit.
+    Compress a PNG to JPEG in-memory to stay under Claude's 5MB base64 limit.
     Returns (base64_string, media_type).
     """
     img = Image.open(image_path).convert("RGB")
@@ -58,7 +109,6 @@ def _compress_image_for_api(image_path: str) -> tuple:
 
 def summarize_page_image(image_path: str) -> str:
     llm = ChatAnthropic(model="claude-haiku-4-5-20251001", temperature=0)
-
     encoded_string, media_type = _compress_image_for_api(image_path)
 
     prompt = (
@@ -87,26 +137,67 @@ def summarize_page_image(image_path: str) -> str:
     return response.content
 
 
+# ── Contextual chunking ───────────────────────────────────────────────────────
+
+def generate_chunk_context(
+    chunk_text: str,
+    page_text: str,
+    source: str,
+    page_num: int,
+    llm,
+) -> str:
+    """
+    Call Claude Haiku to generate a single context sentence that situates
+    this chunk within its page and document. Based on Anthropic's contextual
+    retrieval technique.
+    """
+    prompt = (
+        f"Document: {source}, Page {page_num}\n\n"
+        f"Full page text:\n{page_text}\n\n"
+        f"Chunk to contextualize:\n{chunk_text}\n\n"
+        "Write a single sentence (max 30 words) situating this chunk within the "
+        "document for search retrieval purposes. "
+        "Output only the sentence, nothing else."
+    )
+    response = llm.invoke([HumanMessage(content=prompt)])
+    return response.content.strip()
+
+
+# ── Core ingestion ────────────────────────────────────────────────────────────
+
 def ingest_pdf_file(pdf_path: str, file_hash: str, progress_callback=None) -> int:
     """
     Ingest a single PDF into the existing ChromaDB incrementally.
-    progress_callback(current_page, total_pages) is called after each page is processed.
+
+    Pipeline:
+      Phase 1 — per page: extract raw text, rasterize, vision summarize
+      Phase 2 — chunk text documents only (image summaries kept whole)
+      Phase 3 — contextual chunking: prepend a Haiku-generated context sentence
+      Phase 4 — embed all chunks into ChromaDB
+
+    progress_callback(current, total, status=None) is called to report progress.
     Returns the number of pages ingested.
     """
     os.makedirs(IMAGE_OUT_PATH, exist_ok=True)
 
     file = os.path.basename(pdf_path)
-    documents = []
+    text_documents = []
+    image_documents = []
+    raw_page_texts = {}  # {page_num: raw_text} — kept for context generation
 
     doc = fitz.open(pdf_path)
     total_pages = doc.page_count
 
+    llm = ChatAnthropic(model="claude-haiku-4-5-20251001", temperature=0)
+
+    # ── Phase 1: Page extraction and vision summarization ─────────────────────
     for page_num in range(total_pages):
         page = doc.load_page(page_num)
 
-        # Raw text chunk
         raw_text = page.get_text()
-        documents.append(Document(
+        raw_page_texts[page_num + 1] = raw_text
+
+        text_documents.append(Document(
             page_content=raw_text,
             metadata={
                 "source": file,
@@ -122,7 +213,7 @@ def ingest_pdf_file(pdf_path: str, file_hash: str, progress_callback=None) -> in
         image_path = os.path.join(IMAGE_OUT_PATH, image_filename)
         pix.save(image_path)
 
-        # Vision summary — use cached txt if available to avoid redundant API calls
+        # Vision summary — use cached txt if available
         summary_path = image_path.replace(".png", "_summary.txt")
         if os.path.exists(summary_path):
             print(f"Using cached summary for {image_path}...")
@@ -133,7 +224,8 @@ def ingest_pdf_file(pdf_path: str, file_hash: str, progress_callback=None) -> in
             with open(summary_path, "w", encoding="utf-8") as f:
                 f.write(page_summary)
 
-        documents.append(Document(
+        # Option A: image summaries stored whole — never passed to text_splitter
+        image_documents.append(Document(
             page_content=page_summary,
             metadata={
                 "source": file,
@@ -149,16 +241,49 @@ def ingest_pdf_file(pdf_path: str, file_hash: str, progress_callback=None) -> in
 
     doc.close()
 
-    # Chunk and embed into existing ChromaDB
+    # ── Phase 2: Chunk text documents only (Option A) ─────────────────────────
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    chunks = text_splitter.split_documents(documents)
+    text_chunks = text_splitter.split_documents(text_documents)
+
+    # ── Phase 3: Contextual chunking (Option C) ───────────────────────────────
+    context_cache = load_context_cache()
+    total_chunks = len(text_chunks)
+
+    for idx, chunk in enumerate(text_chunks):
+        chunk_key = _chunk_hash(chunk.page_content)
+        page_num = chunk.metadata.get("page", 1)
+        page_text = raw_page_texts.get(page_num, "")
+
+        if chunk_key in context_cache:
+            print(f"Using cached context for chunk {idx + 1}/{total_chunks}...")
+            context = context_cache[chunk_key]
+        else:
+            context = generate_chunk_context(
+                chunk.page_content, page_text, file, page_num, llm
+            )
+            context_cache[chunk_key] = context
+
+        # Prepend context — the enriched text is what gets embedded
+        chunk.page_content = f"{context}\n\n{chunk.page_content}"
+
+        if progress_callback:
+            progress_callback(
+                idx + 1,
+                total_chunks,
+                f"Generating context {idx + 1} / {total_chunks}",
+            )
+
+    save_context_cache(context_cache)
+
+    # ── Phase 4: Embed context-enriched text chunks + whole image docs ────────
+    all_chunks = text_chunks + image_documents
 
     embedding_model = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
     vector_db = Chroma(persist_directory=DB_PATH, embedding_function=embedding_model)
 
     batch_size = 80
-    for i in range(0, len(chunks), batch_size):
-        vector_db.add_documents(chunks[i : i + batch_size])
+    for i in range(0, len(all_chunks), batch_size):
+        vector_db.add_documents(all_chunks[i : i + batch_size])
 
     print(f"Ingested {total_pages} pages from {file}.")
     return total_pages

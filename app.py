@@ -2,7 +2,7 @@ import streamlit as st
 import os
 import time
 from rag import get_hybrid_chain
-from ingest import compute_file_hash, get_existing_hashes, ingest_pdf_file
+from ingest import compute_file_hash, get_existing_hashes, get_ingested_files, ingest_pdf_file
 
 DATA_PATH = "data/"
 
@@ -71,8 +71,9 @@ with st.sidebar:
                     progress_bar = st.progress(0, text="Starting...")
 
                 def make_callback(bar):
-                    def callback(current, total):
-                        bar.progress(current / total, text=f"Page {current} / {total}")
+                    def callback(current, total, status=None):
+                        text = status if status else f"Page {current} / {total}"
+                        bar.progress(current / total, text=text)
                     return callback
 
                 ingest_pdf_file(save_path, file_hash, progress_callback=make_callback(progress_bar))
@@ -89,6 +90,16 @@ with st.sidebar:
             st.session_state.uploader_key = f"uploader_{int(time.time())}"
             time.sleep(1)
             st.rerun()
+
+    # ── Ingested Documents ────────────────────────────────────────────────────
+    st.divider()
+    st.subheader("Knowledge Base")
+    ingested = get_ingested_files()
+    if ingested:
+        for filename, pages in ingested.items():
+            st.caption(f"📄 {filename} — {pages} pages")
+    else:
+        st.caption("No documents ingested yet.")
 
 # ── Chat UI ───────────────────────────────────────────────────────────────────
 
