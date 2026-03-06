@@ -22,8 +22,8 @@ RERANK_TOP_N = 5   # Docs to keep after reranking and pass to Claude
 class MultimodalRAGChain:
     def __init__(self):
         # 1. Setup Retrievers
-        embedding_model = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
-        vector_db = Chroma(persist_directory=DB_PATH, embedding_function=embedding_model)
+        self.embedding_model = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+        vector_db = Chroma(persist_directory=DB_PATH, embedding_function=self.embedding_model)
         vector_retriever = vector_db.as_retriever(search_kwargs={"k": 10})
 
         print("Building Keyword Index...")
@@ -118,6 +118,20 @@ class MultimodalRAGChain:
         scores = self.reranker.predict(pairs)
         ranked = sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
         return [doc for _, doc in ranked[:RERANK_TOP_N]]
+
+    def embed_query(self, query: str) -> list:
+        """Embed a query string into a vector using the same model as the DB."""
+        return self.embedding_model.embed_query(query)
+
+    def retrieve_with_stages(self, user_query: str) -> tuple:
+        """
+        Returns (candidates, reranked) separately for visualization.
+        candidates — all 20 hybrid retrieval results
+        reranked   — top 5 after cross-encoder reranking
+        """
+        candidates = self.retriever.invoke(user_query)
+        reranked = self._rerank(user_query, candidates)
+        return candidates, reranked
 
     def retrieve(self, user_query):
         """Stage 1: hybrid retrieval. Stage 2: cross-encoder reranking."""
