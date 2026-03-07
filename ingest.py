@@ -207,6 +207,21 @@ def ingest_pdf_file(pdf_path: str, file_hash: str, progress_callback=None) -> in
             },
         ))
 
+        # Skip vision if the page has no embedded images AND has substantial text.
+        # Rasterising a pure-text page wastes a Haiku call — PyMuPDF already
+        # extracted the text more accurately via get_text(). Pages with embedded
+        # images (charts, photos, infographics) still need vision even if they
+        # also carry text, because the visual content won't appear in get_text().
+        has_embedded_images = len(page.get_images(full=True)) > 0
+        has_substantial_text = len(raw_text.strip()) > 100
+        skip_vision = (not has_embedded_images) and has_substantial_text
+
+        if skip_vision:
+            print(f"  Skipping vision for page {page_num + 1} (text-only, no embedded images)")
+            if progress_callback:
+                progress_callback(page_num + 1, total_pages)
+            continue
+
         # Rasterize page → PNG
         pix = page.get_pixmap(dpi=150)
         image_filename = f"{file}_page_{page_num + 1}.png"

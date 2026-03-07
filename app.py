@@ -15,6 +15,18 @@ from ingest import (
     get_ingested_files,
     ingest_pdf_file,
 )
+from eval import (
+    EvalConfig,
+    METRIC_DISPLAY,
+    RESULTS_PATH,
+    baseline_exists,
+    create_baseline_collection,
+    generate_test_set,
+    load_results,
+    load_test_set,
+    run_full_evaluation,
+    save_test_set,
+)
 
 DATA_PATH = "data/"
 UMAP_CACHE_KEYS = ["umap_coords", "umap_reducer", "umap_texts", "umap_metadata"]
@@ -92,6 +104,7 @@ def build_figure(coords, texts, metadata, candidates=None, reranked=None, query_
                 name=label,
                 text=hover,
                 hoverinfo="text",
+                customdata=list(idx),
                 legendgroup=source,
             ))
 
@@ -120,6 +133,7 @@ def build_figure(coords, texts, metadata, candidates=None, reranked=None, query_
                 name=f"Retrieved ({len(candidates)})",
                 text=c_hover,
                 hoverinfo="text",
+                customdata=list(c_idx),
             ))
 
     # ── Highlight: reranked top 5 (red diamond) ────────────────────────────────
@@ -143,6 +157,7 @@ def build_figure(coords, texts, metadata, candidates=None, reranked=None, query_
                 name=f"Reranked Top {len(reranked)}",
                 text=r_hover,
                 hoverinfo="text",
+                customdata=list(r_idx),
             ))
 
     # ── Query point (purple cross) ─────────────────────────────────────────────
@@ -156,6 +171,7 @@ def build_figure(coords, texts, metadata, candidates=None, reranked=None, query_
             text=["Query"],
             textposition="top center",
             name="Query",
+            customdata=[-1],
         ))
 
     fig.update_layout(
@@ -169,6 +185,7 @@ def build_figure(coords, texts, metadata, candidates=None, reranked=None, query_
             zaxis=dict(showbackground=False),
         ),
         height=700,
+        clickmode="event+select",
         legend=dict(itemsizing="constant"),
         margin=dict(l=40, r=40, t=60, b=40),
     )
@@ -250,6 +267,7 @@ with st.sidebar:
                 # Invalidate UMAP cache — DB has changed
                 for key in UMAP_CACHE_KEYS:
                     st.session_state.pop(key, None)
+                st.session_state.pop("selected_chunk_idx", None)
 
                 st.success("Ingestion complete.")
 
@@ -267,14 +285,17 @@ with st.sidebar:
         st.caption("No documents ingested yet.")
 
 
-# ── Tabs ──────────────────────────────────────────────────────────────────────
+# ── Navigation ────────────────────────────────────────────────────────────────
 
-tab_chat, tab_explore = st.tabs(["Chat", "Explore"])
+active_view = st.segmented_control(
+    "Navigation", ["Chat", "Explore", "Eval"], default="Chat", key="active_view",
+    label_visibility="collapsed",
+)
 
 
 # ── Chat Tab ──────────────────────────────────────────────────────────────────
 
-with tab_chat:
+if not active_view or active_view == "Chat":
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
@@ -334,7 +355,7 @@ with tab_chat:
 
 # ── Explore Tab ───────────────────────────────────────────────────────────────
 
-with tab_explore:
+elif active_view == "Explore":
     st.subheader("Vector Space Explorer")
 
     ingested = get_ingested_files()
@@ -347,7 +368,7 @@ with tab_explore:
             if st.button("Compute Visualization", use_container_width=True):
                 with st.spinner("Fetching embeddings and running UMAP..."):
                     compute_umap()
-                st.success("Done!")
+                st.toast("Visualization computed!")
 
         with col_info:
             if "umap_coords" in st.session_state:
@@ -381,10 +402,295 @@ with tab_explore:
                     query_coord = query_2d[0]
 
                 col_a, col_b, col_c = st.columns(3)
-                col_a.caption(f"🟠 Retrieved candidates: {len(candidates)}")
-                col_b.caption(f"🔴 Reranked top: {len(reranked)}")
-                col_c.caption("🟣 Query point")
+                col_a.caption(f"Retrieved candidates: {len(candidates)}")
+                col_b.caption(f"Reranked top: {len(reranked)}")
+                col_c.caption("Query point")
 
             # ── Plot ──────────────────────────────────────────────────────────
             fig = build_figure(coords, texts, metadata, candidates, reranked, query_coord)
             st.plotly_chart(fig, use_container_width=True)
+
+            # ── Searchable chunk browser ──────────────────────────────────────
+            st.divider()
+            search_query = st.text_input(
+                "Search chunks by keyword:",
+                placeholder="e.g. brake, adjustment, cable...",
+                key="chunk_search",
+            )
+
+            if search_query:
+                # Find matching chunks
+                matching = [
+                    i for i in range(len(texts))
+                    if (search_query.lower() in texts[i].lower() or
+                        search_query.lower() in metadata[i].get("source", "").lower())
+                ]
+
+                if matching:
+                    # Display matching chunks as selectbox
+                    chunk_opts = [
+                        f"{metadata[i].get('source', 'Unknown')} (Page {metadata[i].get('page', '?')}) — "
+                        f"{texts[i][:60].replace(chr(10), ' ')}..."
+                        for i in matching
+                    ]
+                    selected_opt = st.selectbox("Matching chunks:", chunk_opts, key="chunk_select")
+                    sel_idx = matching[chunk_opts.index(selected_opt)]
+
+                    # Show full details
+                    meta_sel = metadata[sel_idx]
+                    chunk_text = texts[sel_idx]
+                    with st.container(border=True):
+                        st.markdown(
+                            f"**{meta_sel.get('source', 'Unknown')}** — "
+                            f"Page {meta_sel.get('page', '?')} · `{meta_sel.get('type', 'unknown')}`"
+                        )
+                        st.markdown(chunk_text)
+                        img_path = meta_sel.get("image_path")
+                        if img_path and os.path.exists(img_path):
+                            st.image(img_path, caption=os.path.basename(img_path))
+                else:
+                    st.info(f"No chunks match '{search_query}'.")
+
+
+# ── Eval Tab ───────────────────────────────────────────────────────────────────
+
+elif active_view == "Eval":
+    st.subheader("RAG Evaluation Pipeline")
+
+    ingested = get_ingested_files()
+    if not ingested:
+        st.info("No documents ingested yet. Upload and ingest PDFs first.")
+    else:
+        # ── Step 1: Test Set ──────────────────────────────────────────────────
+        st.markdown("### Step 1 — Test Set")
+
+        test_set = load_test_set()
+        col_gen, col_gen_info = st.columns([1, 3])
+
+        with col_gen:
+            n_questions = st.number_input(
+                "Questions to generate", min_value=5, max_value=50, value=25, step=5,
+                key="eval_n_questions",
+            )
+            if st.button("Generate Test Set", use_container_width=True, key="btn_generate"):
+                progress_placeholder = st.empty()
+                prog_bar = progress_placeholder.progress(0, text="Starting...")
+
+                def gen_cb(msg: str, frac: float):
+                    prog_bar.progress(frac, text=msg)
+
+                with st.spinner("Generating Q&A pairs with Claude Haiku..."):
+                    test_set = generate_test_set(n=int(n_questions), progress_callback=gen_cb)
+                    save_test_set(test_set)
+
+                progress_placeholder.empty()
+                st.toast(f"Test set ready: {len(test_set)} questions saved.")
+                st.rerun()
+
+        with col_gen_info:
+            if test_set:
+                st.success(f"{len(test_set)} questions loaded from `eval_data/test_set.json`")
+                with st.expander("Preview test set"):
+                    for i, item in enumerate(test_set[:5]):
+                        st.markdown(
+                            f"**Q{i + 1}** ({item.get('source', '?')} p.{item.get('page', '?')}): "
+                            f"{item['question']}"
+                        )
+                        st.caption(f"A: {item['ground_truth'][:150]}...")
+                    if len(test_set) > 5:
+                        st.caption(f"… and {len(test_set) - 5} more.")
+            else:
+                st.info("No test set found. Generate one to proceed.")
+
+        st.divider()
+
+        # ── Step 2: Baseline Collection ───────────────────────────────────────
+        st.markdown("### Step 2 — Baseline Collection (optional)")
+        st.caption(
+            "Creates a second ChromaDB without contextual chunking so you can "
+            "compare retrieval quality with vs. without context augmentation."
+        )
+
+        col_base, col_base_info = st.columns([1, 3])
+        with col_base:
+            if st.button("Create Baseline DB", use_container_width=True, key="btn_baseline"):
+                base_placeholder = st.empty()
+                base_bar = base_placeholder.progress(0, text="Starting...")
+
+                def base_cb(msg: str, frac: float):
+                    base_bar.progress(frac, text=msg)
+
+                with st.spinner("Re-ingesting PDFs without contextual chunking..."):
+                    create_baseline_collection(progress_callback=base_cb)
+
+                base_placeholder.empty()
+                st.toast("Baseline collection created.")
+                st.rerun()
+
+        with col_base_info:
+            if baseline_exists():
+                st.success("Baseline DB exists — contextual vs. baseline comparison available.")
+            else:
+                st.warning("No baseline DB yet. Evaluation will only run contextual configs.")
+
+        st.divider()
+
+        # ── Step 3: Run Evaluation ────────────────────────────────────────────
+        st.markdown("### Step 3 — Run Evaluation")
+
+        # Initialise checkbox defaults once per session (only if key not yet set)
+        _check_defaults = {
+            "eval_dense": True, "eval_bm25": True, "eval_hybrid": True,
+            "eval_rerank": True, "eval_no_rerank": True,
+            "eval_ctx": True, "eval_base": baseline_exists(),
+        }
+        for _k, _v in _check_defaults.items():
+            if _k not in st.session_state:
+                st.session_state[_k] = _v
+
+        # Preset buttons — write to session_state keys before checkboxes render
+        pre_col1, pre_col2, pre_col3 = st.columns([1, 1, 4])
+        if pre_col1.button("Quick (2 configs)", use_container_width=True, key="preset_quick"):
+            # Hybrid+Rerank only — your production setup vs. no-rerank variant
+            st.session_state["eval_dense"]     = False
+            st.session_state["eval_bm25"]      = False
+            st.session_state["eval_hybrid"]    = True
+            st.session_state["eval_rerank"]    = True
+            st.session_state["eval_no_rerank"] = False
+            st.session_state["eval_ctx"]       = True
+            st.session_state["eval_base"]      = False
+        if pre_col2.button("Full (12 configs)", use_container_width=True, key="preset_full"):
+            st.session_state["eval_dense"]     = True
+            st.session_state["eval_bm25"]      = True
+            st.session_state["eval_hybrid"]    = True
+            st.session_state["eval_rerank"]    = True
+            st.session_state["eval_no_rerank"] = True
+            st.session_state["eval_ctx"]       = True
+            st.session_state["eval_base"]      = baseline_exists()
+
+        col_cfg1, col_cfg2, col_cfg3 = st.columns(3)
+        with col_cfg1:
+            st.caption("Retrieval strategies")
+            use_dense  = st.checkbox("Dense (semantic)", key="eval_dense")
+            use_bm25   = st.checkbox("BM25 (keyword)",  key="eval_bm25")
+            use_hybrid = st.checkbox("Hybrid",           key="eval_hybrid")
+        with col_cfg2:
+            st.caption("Reranking")
+            use_rerank    = st.checkbox("With reranking",    key="eval_rerank")
+            use_no_rerank = st.checkbox("Without reranking", key="eval_no_rerank")
+        with col_cfg3:
+            st.caption("Chunking")
+            use_contextual = st.checkbox("Contextual chunks", key="eval_ctx")
+            use_baseline   = st.checkbox(
+                "Baseline chunks",
+                disabled=not baseline_exists(),
+                key="eval_base",
+            )
+
+        strategies     = [s for s, flag in [("dense", use_dense), ("bm25", use_bm25), ("hybrid", use_hybrid)] if flag]
+        reranking_opts = [v for v, flag in [(True, use_rerank), (False, use_no_rerank)] if flag]
+        ctx_opts       = [v for v, flag in [(True, use_contextual), (False, use_baseline)] if flag]
+
+        configs = [
+            EvalConfig(strategy=s, reranking=r, contextual=c)
+            for s in strategies
+            for r in reranking_opts
+            for c in ctx_opts
+        ]
+
+        n_cfg = len(configs)
+        n_q   = len(test_set) if test_set else 0
+        est_calls = n_cfg * n_q * 2  # retrieve + answer per question, RAGAS on top
+        st.caption(
+            f"**{n_cfg} configs × {n_q} questions** — ~{est_calls} LLM calls "
+            f"(answer generation) + RAGAS scoring passes."
+        )
+
+        run_disabled = not test_set or not strategies or not reranking_opts or not ctx_opts
+        if st.button(
+            "Run Evaluation",
+            use_container_width=True,
+            disabled=run_disabled,
+            type="primary",
+            key="btn_run_eval",
+        ):
+            eval_placeholder = st.empty()
+            eval_bar = eval_placeholder.progress(0, text="Starting evaluation...")
+
+            def eval_cb(msg: str, frac: float):
+                eval_bar.progress(frac, text=msg)
+
+            with st.spinner(f"Evaluating {n_cfg} configs..."):
+                run_full_evaluation(configs, test_set, progress_callback=eval_cb)
+
+            eval_placeholder.empty()
+            st.toast("Evaluation complete!")
+            st.rerun()
+
+        st.divider()
+
+        # ── Results ───────────────────────────────────────────────────────────
+        results = load_results()
+        if results:
+            st.markdown("### Results")
+            st.caption(
+                f"Evaluated {results['n_questions']} questions · "
+                f"Run at {results['timestamp'][:19].replace('T', ' ')}"
+            )
+
+            # Build a flat table
+            rows = []
+            metric_keys = None
+            for cfg_result in results["configs"]:
+                agg = cfg_result["aggregate"]
+                if metric_keys is None:
+                    metric_keys = list(agg.keys())
+                row = {"Config": cfg_result["label"]}
+                row.update({METRIC_DISPLAY.get(k, k): round(v, 3) for k, v in agg.items()})
+                rows.append(row)
+
+            import pandas as pd
+            df = pd.DataFrame(rows).set_index("Config")
+            st.dataframe(df.style.highlight_max(axis=0, color="#d4edda"), use_container_width=True)
+
+            # Bar chart per metric
+            if metric_keys:
+                metric_labels = [METRIC_DISPLAY.get(k, k) for k in metric_keys]
+                selected_metric = st.selectbox(
+                    "Chart metric:", metric_labels, key="eval_chart_metric"
+                )
+                raw_key = next(
+                    (k for k in metric_keys if METRIC_DISPLAY.get(k, k) == selected_metric),
+                    metric_keys[0],
+                )
+
+                bar_fig = go.Figure(go.Bar(
+                    x=[r["Config"] for r in rows],
+                    y=[r["aggregate"][raw_key] for r in results["configs"]],
+                    marker_color="steelblue",
+                    text=[f"{r['aggregate'][raw_key]:.3f}" for r in results["configs"]],
+                    textposition="outside",
+                ))
+                bar_fig.update_layout(
+                    title=f"{selected_metric} by Configuration",
+                    yaxis=dict(range=[0, 1.05], title=selected_metric),
+                    xaxis_title="Config",
+                    height=450,
+                    margin=dict(l=40, r=40, t=60, b=120),
+                    xaxis=dict(tickangle=-30),
+                )
+                st.plotly_chart(bar_fig, use_container_width=True)
+
+            # Per-question breakdown
+            with st.expander("Per-question breakdown"):
+                cfg_labels = [r["label"] for r in results["configs"]]
+                sel_cfg = st.selectbox("Config:", cfg_labels, key="eval_perq_cfg")
+                cfg_data = next(r for r in results["configs"] if r["label"] == sel_cfg)
+                per_q_df = pd.DataFrame(cfg_data["per_question"])
+                per_q_df.columns = [
+                    METRIC_DISPLAY.get(c, c) if c != "question" else "Question"
+                    for c in per_q_df.columns
+                ]
+                st.dataframe(per_q_df, use_container_width=True)
+        else:
+            st.info("No results yet. Run evaluation above to see scores.")
