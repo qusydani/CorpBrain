@@ -1,10 +1,12 @@
 # CorpBrain: Multimodal RAG Document Assistant
 
-CorpBrain is a **production-grade Multimodal Retrieval-Augmented Generation (RAG)** system built for dense technical documents. It goes far beyond standard text RAG — combining vision-based page summarization, contextual chunking, hybrid search, cross-encoder reranking, and a full RAGAS evaluation pipeline, all wrapped in an interactive Streamlit UI.
+CorpBrain is a **production-grade Multimodal Retrieval-Augmented Generation (RAG)** system built for dense technical documents. It combines vision-based page summarization, contextual chunking, hybrid search, cross-encoder reranking, and a full RAGAS evaluation pipeline, all wrapped in an interactive Streamlit UI.
 
-<img width="624" height="645" alt="Chat interface" src="https://github.com/user-attachments/assets/8ab71e35-bbfa-4efd-b047-4fee5888924f" />
-<img width="623" height="298" alt="Explore view" src="https://github.com/user-attachments/assets/d2047ea1-5128-46f5-90e8-0269d3987221" />
-<img width="621" height="443" alt="Eval view" src="https://github.com/user-attachments/assets/25572d4d-ad18-4c15-a4a1-385916f42b18" />
+
+<img width="1919" height="911" alt="image" src="https://github.com/user-attachments/assets/3c8b6b32-6a8e-44d5-88d4-434561b6c8ac" />
+<img width="1919" height="912" alt="image" src="https://github.com/user-attachments/assets/83f30ca3-a151-4245-9f1c-3f483aa30d9b" />
+<img width="1919" height="914" alt="image" src="https://github.com/user-attachments/assets/06f26e3c-8bbc-4af7-8238-6bea39b3a7f9" />
+
 
 ---
 
@@ -13,7 +15,7 @@ CorpBrain is a **production-grade Multimodal Retrieval-Augmented Generation (RAG
 ### Ingestion
 - **Multimodal Vision Summarization** — Rasterizes PDF pages with embedded images (charts, diagrams, schematics) and sends them to **Claude Haiku** for rich, verbatim-aware text summaries; pure text pages skip vision for efficiency.
 - **Contextual Chunking** — Implements Anthropic's contextual retrieval technique: calls Claude Haiku to prepend a 1-sentence situating context to every chunk before embedding, boosting retrieval precision and recall.
-- **Deduplication** — MD5 file hashing prevents re-ingesting the same document; chunk-level context caching avoids redundant LLM calls on re-ingestion.
+- **Deduplication** — MD5 file hashing prevents re-ingesting the same document, chunk-level context caching avoids redundant LLM calls on re-ingestion.
 
 ### Retrieval
 - **Hybrid Search** — `EnsembleRetriever` fuses ChromaDB vector search (semantic) with BM25 (keyword) to capture both conceptual intent and exact technical terminology.
