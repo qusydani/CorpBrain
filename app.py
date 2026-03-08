@@ -19,6 +19,7 @@ from eval import (
     EvalConfig,
     METRIC_DISPLAY,
     RESULTS_PATH,
+    backfill_overall_scores,
     baseline_exists,
     create_baseline_collection,
     generate_test_set,
@@ -632,56 +633,257 @@ elif active_view == "Eval":
         # ── Results ───────────────────────────────────────────────────────────
         results = load_results()
         if results:
+            import pandas as pd
+
+            # Backfill overall_score for results produced before this feature
+            if results["configs"] and "overall_score" not in results["configs"][0]:
+                backfill_overall_scores()
+                results = load_results()
+
             st.markdown("### Results")
             st.caption(
                 f"Evaluated {results['n_questions']} questions · "
                 f"Run at {results['timestamp'][:19].replace('T', ' ')}"
             )
 
-            # Build a flat table
+            # ── Best configuration summary card ───────────────────────────────
+            best = max(results["configs"], key=lambda r: r.get("overall_score", 0))
+            agg_b = best["aggregate"]
+            metric_keys = list(agg_b.keys())
+
+            # Precompute per-metric rankings across all configs
+            metric_ranks = {}
+            for k in metric_keys:
+                sorted_by_metric = sorted(
+                    results["configs"], key=lambda r: r["aggregate"].get(k, 0), reverse=True
+                )
+                metric_ranks[k] = next(
+                    i + 1 for i, r in enumerate(sorted_by_metric) if r["label"] == best["label"]
+                )
+
+            with st.container(border=True):
+                st.markdown(f"**Best configuration: `{best['label']}`**  "
+                            f"— Overall score **{best['overall_score']:.3f}**")
+                b_cols = st.columns(len(metric_keys))
+                for col, k in zip(b_cols, metric_keys):
+                    rank = metric_ranks[k]
+                    col.markdown(
+                        f"<div style='font-size:0.8rem;color:rgba(255,255,255,0.6);margin-bottom:2px'>"
+                        f"{METRIC_DISPLAY.get(k, k)}</div>"
+                        f"<div style='display:flex;align-items:baseline;gap:6px'>"
+                        f"<span style='font-size:2rem;font-weight:700'>{agg_b[k]:.3f}</span>"
+                        f"<span style='font-size:0.72rem;color:rgba(255,255,255,0.4)'>"
+                        f"#{rank} of {len(results['configs'])}</span></div>",
+                        unsafe_allow_html=True,
+                    )
+
+            # ── Full ranked table ─────────────────────────────────────────────
             rows = []
-            metric_keys = None
-            for cfg_result in results["configs"]:
+            for cfg_result in sorted(
+                results["configs"], key=lambda r: r.get("overall_score", 0), reverse=True
+            ):
                 agg = cfg_result["aggregate"]
-                if metric_keys is None:
-                    metric_keys = list(agg.keys())
-                row = {"Config": cfg_result["label"]}
+                row = {
+                    "Config":        cfg_result["label"],
+                    "Overall":       round(cfg_result.get("overall_score", 0), 3),
+                }
                 row.update({METRIC_DISPLAY.get(k, k): round(v, 3) for k, v in agg.items()})
                 rows.append(row)
 
-            import pandas as pd
             df = pd.DataFrame(rows).set_index("Config")
-            st.dataframe(df.style.highlight_max(axis=0, color="#d4edda"), use_container_width=True)
+            st.dataframe(
+                df.style.highlight_max(axis=0, color="#1a6b3c"),
+                use_container_width=True,
+            )
 
-            # Bar chart per metric
-            if metric_keys:
-                metric_labels = [METRIC_DISPLAY.get(k, k) for k in metric_keys]
-                selected_metric = st.selectbox(
-                    "Chart metric:", metric_labels, key="eval_chart_metric"
-                )
+            # ── Bar chart ─────────────────────────────────────────────────────
+            chart_options = ["Overall"] + [METRIC_DISPLAY.get(k, k) for k in metric_keys]
+            selected_metric = st.selectbox("Chart metric:", chart_options, key="eval_chart_metric")
+
+            if selected_metric == "Overall":
+                sort_key = lambda r: r.get("overall_score", 0)
+                y_fn = lambda r: r.get("overall_score", 0)
+            else:
                 raw_key = next(
                     (k for k in metric_keys if METRIC_DISPLAY.get(k, k) == selected_metric),
                     metric_keys[0],
                 )
+                sort_key = lambda r: r["aggregate"].get(raw_key, 0)
+                y_fn = lambda r: r["aggregate"].get(raw_key, 0)
 
-                bar_fig = go.Figure(go.Bar(
-                    x=[r["Config"] for r in rows],
-                    y=[r["aggregate"][raw_key] for r in results["configs"]],
-                    marker_color="steelblue",
-                    text=[f"{r['aggregate'][raw_key]:.3f}" for r in results["configs"]],
-                    textposition="outside",
-                ))
-                bar_fig.update_layout(
-                    title=f"{selected_metric} by Configuration",
-                    yaxis=dict(range=[0, 1.05], title=selected_metric),
-                    xaxis_title="Config",
-                    height=450,
-                    margin=dict(l=40, r=40, t=60, b=120),
-                    xaxis=dict(tickangle=-30),
+            sorted_configs = sorted(results["configs"], key=sort_key, reverse=True)
+            y_vals = [y_fn(r) for r in sorted_configs]
+            y_labels = [f"{v:.3f}" for v in y_vals]
+            cfg_labels_sorted = [r["label"] for r in sorted_configs]
+            bar_colors = [
+                "#2ecc71" if r["label"] == best["label"] else "steelblue"
+                for r in sorted_configs
+            ]
+
+            bar_fig = go.Figure(go.Bar(
+                x=cfg_labels_sorted,
+                y=y_vals,
+                marker_color=bar_colors,
+                text=y_labels,
+                textposition="outside",
+            ))
+            y_spread = max(y_vals) - min(y_vals)
+            y_floor = max(0, min(y_vals) - y_spread * 2)
+            bar_fig.update_layout(
+                title=f"{selected_metric} by Configuration (sorted by {selected_metric})",
+                yaxis=dict(range=[y_floor, max(y_vals) * 1.06], title=selected_metric),
+                xaxis_title="Config",
+                height=450,
+                margin=dict(l=40, r=40, t=60, b=120),
+                xaxis=dict(tickangle=-30),
+            )
+            st.plotly_chart(bar_fig, use_container_width=True)
+
+            # ── Key Findings ──────────────────────────────────────────────────
+            with st.expander("Key Findings", expanded=True):
+                cfgs = results["configs"]
+
+                prec_key  = next((k for k in metric_keys if "precision" in k.lower()), None)
+                rec_key   = next((k for k in metric_keys if "recall"    in k.lower()), None)
+                faith_key = next((k for k in metric_keys if "faith"     in k.lower()), None)
+                relv_key  = next((k for k in metric_keys if "relevancy" in k.lower() or "relevance" in k.lower()), None)
+
+                # ── Chart 1: Contextual chunking delta ────────────────────────
+                st.markdown("#### Finding 1 · Contextual chunking consistently improves retrieval")
+                st.caption(
+                    "Across every retrieval strategy, prepending a Haiku-generated context sentence "
+                    "to each chunk improves both Context Precision and Recall. "
+                    "All deltas are positive — the effect is robust, not strategy-dependent."
                 )
-                st.plotly_chart(bar_fig, use_container_width=True)
 
-            # Per-question breakdown
+                ctx_cfgs  = [r for r in cfgs if r["label"].endswith("+Ctx")]
+                delta_labels, prec_deltas, rec_deltas = [], [], []
+                for ctx_r in ctx_cfgs:
+                    base_label = ctx_r["label"].replace("+Ctx", "+Base")
+                    base_r = next((r for r in cfgs if r["label"] == base_label), None)
+                    if base_r is None:
+                        continue
+                    strategy = ctx_r["label"].replace("+Ctx", "")
+                    delta_labels.append(strategy)
+                    if prec_key:
+                        prec_deltas.append(ctx_r["aggregate"].get(prec_key, 0) - base_r["aggregate"].get(prec_key, 0))
+                    if rec_key:
+                        rec_deltas.append(ctx_r["aggregate"].get(rec_key, 0) - base_r["aggregate"].get(rec_key, 0))
+
+                if delta_labels:
+                    fig1 = go.Figure()
+                    if prec_deltas:
+                        fig1.add_trace(go.Bar(
+                            name="Precision Δ", x=delta_labels, y=prec_deltas,
+                            marker_color="#1abc9c",
+                            text=[f"+{v:.3f}" if v >= 0 else f"{v:.3f}" for v in prec_deltas],
+                            textposition="outside",
+                        ))
+                    if rec_deltas:
+                        fig1.add_trace(go.Bar(
+                            name="Recall Δ", x=delta_labels, y=rec_deltas,
+                            marker_color="#3498db",
+                            text=[f"+{v:.3f}" if v >= 0 else f"{v:.3f}" for v in rec_deltas],
+                            textposition="outside",
+                        ))
+                    all_deltas = prec_deltas + rec_deltas
+                    fig1.add_hline(y=0, line_dash="dash", line_color="gray", line_width=1)
+                    fig1.update_layout(
+                        barmode="group",
+                        title="Context Precision & Recall Delta: Contextual Chunking vs Baseline (Ctx − Base)",
+                        yaxis=dict(title="Score Delta", range=[min(0, min(all_deltas)) - 0.02, max(all_deltas) * 1.4]),
+                        xaxis_title="Strategy",
+                        height=380,
+                        margin=dict(l=40, r=40, t=50, b=60),
+                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                    )
+                    st.plotly_chart(fig1, use_container_width=True)
+
+                st.divider()
+
+                # ── Charts 2 & 3 side by side ─────────────────────────────────
+                col2, col3 = st.columns(2)
+
+                # ── Chart 2: Reranking hurts faithfulness ─────────────────────
+                with col2:
+                    st.markdown("#### Finding 2 · Reranking hurts faithfulness")
+                    st.caption(
+                        "The MS MARCO cross-encoder was trained on web search queries. "
+                        "On formal policy documents it demotes the most grounding chunks, "
+                        "leaving Claude with weaker evidence — reducing faithfulness across all strategies."
+                    )
+                    if faith_key:
+                        strategies_3 = ["Dense", "BM25", "Hybrid"]
+                        no_rerank_vals, rerank_vals = [], []
+                        for strat in strategies_3:
+                            no_rr = [r for r in cfgs if r["label"].startswith(strat) and "+Rerank" not in r["label"]]
+                            rr    = [r for r in cfgs if r["label"].startswith(strat) and "+Rerank" in r["label"]]
+                            no_rerank_vals.append(sum(r["aggregate"].get(faith_key, 0) for r in no_rr) / len(no_rr) if no_rr else 0)
+                            rerank_vals.append(sum(r["aggregate"].get(faith_key, 0) for r in rr) / len(rr) if rr else 0)
+
+                        fig2 = go.Figure()
+                        fig2.add_trace(go.Bar(
+                            name="No Rerank", x=strategies_3, y=no_rerank_vals,
+                            marker_color="#3498db",
+                            text=[f"{v:.3f}" for v in no_rerank_vals],
+                            textposition="outside",
+                        ))
+                        fig2.add_trace(go.Bar(
+                            name="With Rerank", x=strategies_3, y=rerank_vals,
+                            marker_color="#e74c3c",
+                            text=[f"{v:.3f}" for v in rerank_vals],
+                            textposition="outside",
+                        ))
+                        all_f = no_rerank_vals + rerank_vals
+                        f_spread = max(all_f) - min(all_f)
+                        fig2.update_layout(
+                            barmode="group",
+                            title="Faithfulness: Rerank vs No Rerank",
+                            yaxis=dict(range=[max(0, min(all_f) - f_spread * 2), max(all_f) * 1.08], title="Faithfulness"),
+                            xaxis_title="Strategy",
+                            height=380,
+                            margin=dict(l=30, r=20, t=50, b=60),
+                            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                        )
+                        st.plotly_chart(fig2, use_container_width=True)
+
+                # ── Chart 3: Hybrid leads on Answer Relevancy ────────────────
+                with col3:
+                    st.markdown("#### Finding 3 · Hybrid search earns its complexity")
+                    st.caption(
+                        "Hybrid search leads on Answer Relevancy by combining dense semantic matching "
+                        "with BM25 keyword overlap. Neither signal alone is sufficient — "
+                        "the ensemble captures both conceptual intent and exact terminology from policy documents."
+                    )
+                    if relv_key:
+                        strategies_3 = ["Dense", "BM25", "Hybrid"]
+                        relv_vals = []
+                        for strat in strategies_3:
+                            group = [r for r in cfgs if r["label"].startswith(strat)]
+                            relv_vals.append(sum(r["aggregate"].get(relv_key, 0) for r in group) / len(group) if group else 0)
+
+                        sorted_pairs = sorted(zip(relv_vals, strategies_3), reverse=True)
+                        relv_vals, strategies_3 = [v for v, _ in sorted_pairs], [s for _, s in sorted_pairs]
+                        best_strat = strategies_3[0]
+                        colors3 = ["#f39c12" if s == best_strat else "steelblue" for s in strategies_3]
+                        fig3 = go.Figure(go.Bar(
+                            x=strategies_3, y=relv_vals,
+                            marker_color=colors3,
+                            text=[f"{v:.3f}" for v in relv_vals],
+                            textposition="outside",
+                        ))
+                        r_spread = max(relv_vals) - min(relv_vals)
+                        fig3.update_layout(
+                            title="Avg Answer Relevancy by Retriever Type",
+                            yaxis=dict(range=[max(0, min(relv_vals) - r_spread * 2), max(relv_vals) * 1.08], title="Ans. Relevancy"),
+                            xaxis_title="Retriever",
+                            height=380,
+                            margin=dict(l=30, r=20, t=50, b=60),
+                            showlegend=False,
+                        )
+                        st.plotly_chart(fig3, use_container_width=True)
+
+            # ── Per-question breakdown ─────────────────────────────────────────
             with st.expander("Per-question breakdown"):
                 cfg_labels = [r["label"] for r in results["configs"]]
                 sel_cfg = st.selectbox("Config:", cfg_labels, key="eval_perq_cfg")

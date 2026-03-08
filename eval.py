@@ -77,6 +77,68 @@ class EvalConfig:
         return DB_PATH if self.contextual else BASELINE_DB_PATH
 
 
+# ── Overall score ─────────────────────────────────────────────────────────────
+
+# Weighted to reflect that this is a retrieval-system evaluation.
+# Retrieval metrics (Precision + Recall) carry 50% of the weight combined;
+# answer-quality metrics share the remaining 50%.
+_METRIC_WEIGHTS = {
+    # RAGAS 0.2.x names
+    "llm_context_precision_with_reference": 0.25,
+    "llm_context_recall":                   0.25,
+    "faithfulness":                         0.20,
+    "answer_relevancy":                     0.15,
+    "answer_correctness":                   0.15,
+    # RAGAS <0.2 fallback names
+    "context_precision":                    0.25,
+    "context_recall":                       0.25,
+}
+
+
+def _overall_score(aggregate: dict) -> float:
+    """
+    Compute a weighted overall score from a RAGAS aggregate dict.
+    Keys not listed in _METRIC_WEIGHTS fall back to equal weight among
+    the unrecognised metrics so the function never silently drops data.
+    Returns a value in [0, 1] rounded to 4 decimal places.
+    """
+    known, unknown = {}, {}
+    for k, v in aggregate.items():
+        if k in _METRIC_WEIGHTS:
+            known[k] = v
+        else:
+            unknown[k] = v
+
+    total_weight = sum(_METRIC_WEIGHTS[k] for k in known)
+    score = sum(_METRIC_WEIGHTS[k] * v for k, v in known.items())
+
+    if unknown:
+        # Distribute remaining weight equally across unrecognised metrics
+        leftover = max(0.0, 1.0 - total_weight) / len(unknown)
+        score += sum(v * leftover for v in unknown.values())
+        total_weight += leftover * len(unknown)
+
+    if total_weight == 0:
+        return 0.0
+    return round(score / total_weight, 4)
+
+
+def backfill_overall_scores() -> bool:
+    """
+    Add/recalculate overall_score for every config in an existing
+    eval_results.json without re-running any evaluation.
+    Returns True if the file was updated, False if not found.
+    """
+    data = load_results()
+    if not data:
+        return False
+    for cfg in data.get("configs", []):
+        cfg["overall_score"] = _overall_score(cfg["aggregate"])
+    with open(RESULTS_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return True
+
+
 # ── Persistence helpers ────────────────────────────────────────────────────────
 
 def load_test_set() -> Optional[list]:
@@ -316,9 +378,9 @@ def _run_ragas(samples: list, ragas_llm, ragas_emb) -> tuple:
     limits and causes TimeoutError on many jobs, which silently produce NaN
     and skew aggregate means.
 
-    max_workers=8  — Claude Sonnet handles concurrent scoring jobs well without
-                     hitting rate limits. Conservative enough to avoid bursts
-                     while still being ~2x faster than the original max_workers=4.
+    max_workers=4  — Haiku's Tier 1 rate limit is 50 RPM. At ~7s/job, 4 workers
+                     ≈ 34 RPM — safely under the cap. 8 workers ≈ 68 RPM which
+                     exceeds the limit and causes the TimeoutErrors.
     timeout=120    — 2-minute per-job deadline (Gemini Flash is fast; 60s default
                      is too tight when the API is under load)
     max_retries=3  — retry timed-out or rate-limited jobs before giving up
@@ -346,7 +408,7 @@ def _run_ragas(samples: list, ragas_llm, ragas_emb) -> tuple:
         for s in samples
     ])
 
-    run_cfg = RunConfig(max_workers=8, timeout=120, max_retries=3)
+    run_cfg = RunConfig(max_workers=4, timeout=120, max_retries=3)
 
     result = evaluate(
         dataset=dataset,
@@ -518,8 +580,9 @@ def run_full_evaluation(
             progress_callback=_make_sub_progress(overall_idx, total, progress_callback),
         )
         results.append({
-            "config": asdict(config),
-            "label":  config.label,
+            "config":        asdict(config),
+            "label":         config.label,
+            "overall_score": _overall_score(config_result["aggregate"]),
             **config_result,
         })
 
