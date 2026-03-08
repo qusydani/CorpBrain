@@ -4,10 +4,20 @@ CorpBrain is a **production-grade Multimodal Retrieval-Augmented Generation (RAG
 
 
 <img width="1919" height="911" alt="image" src="https://github.com/user-attachments/assets/3c8b6b32-6a8e-44d5-88d4-434561b6c8ac" />
+
+>Main conversation page to ask questions about knowledge base
+
 <img width="1919" height="912" alt="image" src="https://github.com/user-attachments/assets/83f30ca3-a151-4245-9f1c-3f483aa30d9b" />
+
+>Explore vectors, query, retrieval and ranking in latent space
+
 <img width="1919" height="914" alt="image" src="https://github.com/user-attachments/assets/06f26e3c-8bbc-4af7-8238-6bea39b3a7f9" />
 
+>RAGAS Evaluation pipeline and insights analysis
 
+[![Watch the demo](https://img.youtube.com/vi/R_5rqiOa0P4/0.jpg)](https://www.youtube.com/watch?v=R_5rqiOa0P4)
+
+>Watch the Demo
 ---
 
 ## Key Features
@@ -76,6 +86,7 @@ Query
 | Vision / Contextual Chunking | Claude Haiku (`claude-haiku-4-5`) |
 | Answer Generation | Claude Sonnet (`claude-sonnet-4-6`) |
 | Eval LLM | Gemini 2.5 Flash |
+| Orchestrastion Glue | LangChain |
 | Vector Store | ChromaDB |
 | Keyword Search | BM25 (rank-bm25) |
 | Reranker | `cross-encoder/ms-marco-MiniLM-L-6-v2` |
