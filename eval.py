@@ -2,7 +2,10 @@
 eval.py — CorpBrain RAG Evaluation Pipeline
 
 CLI usage:
-    python eval.py generate [--n 25]        # Generate synthetic test set
+    python eval.py generate [--n 25]        # Generate synthetic (single-hop) test set
+    python eval.py generate-multihop [--n 15] [--db contextual|baseline] [--seed S]
+                                            # Multi-hop candidates → eval_data/multihop_candidates.json
+    python eval.py merge-multihop           # Label test set + append reviewed candidates
     python eval.py baseline                 # Create baseline DB (no contextual chunking)
     python eval.py run [--strategies dense bm25 hybrid]
                        [--no-baseline]      # Skip baseline comparison
@@ -274,6 +277,226 @@ def generate_test_set(n: int = 25, progress_callback=None) -> list:
     return test_set
 
 
+# ── Multi-hop test set ─────────────────────────────────────────────────────────
+
+MULTIHOP_CANDIDATES_PATH = os.path.join(EVAL_DATA_PATH, "multihop_candidates.json")
+
+# Question kinds rotated across the generated set. "group" is how many chunks
+# feed the question; cross-document always pairs chunks from different PDFs.
+HOP_KINDS = {
+    "comparison": {
+        "group": 2, "cross_doc": False,
+        "instruction": "a COMPARISON question that contrasts a figure, policy or "
+                       "attribute described in one excerpt with one described in the other",
+    },
+    "aggregation": {
+        "group": 3, "cross_doc": False,
+        "instruction": "an AGGREGATION question whose answer combines facts from every "
+                       "excerpt (e.g. a total, a count, or a list drawn from all of them)",
+    },
+    "multi-part": {
+        "group": 2, "cross_doc": False,
+        "instruction": "a MULTI-PART question with one sub-question answered by each excerpt, "
+                       "joined naturally into a single question",
+    },
+    "cross-document": {
+        "group": 2, "cross_doc": True,
+        "instruction": "a CROSS-DOCUMENT question that links the two documents, e.g. how a "
+                       "measure in one relates to an initiative or result in the other",
+    },
+}
+
+
+def _load_text_chunks(db_path: str) -> list:
+    """Text chunks (>100 chars) with their stored embeddings: [{text, source, page, emb}]."""
+    import numpy as np
+
+    collection = chromadb.PersistentClient(path=db_path).get_collection(CHROMA_COLLECTION)
+    result = collection.get(include=["documents", "metadatas", "embeddings"])
+    chunks = []
+    for txt, meta, emb in zip(result["documents"], result["metadatas"], result["embeddings"]):
+        if meta and meta.get("type") == "text" and len((txt or "").strip()) > 100:
+            chunks.append({
+                "text":   txt,
+                "source": meta.get("source", "Unknown"),
+                "page":   meta.get("page", 0),
+                "emb":    np.asarray(emb, dtype=float),
+            })
+    return chunks
+
+
+def sample_chunk_groups(chunks: list, kinds: list, rng: random.Random, top_k: int = 5) -> list:
+    """
+    Pick one group of related chunks per entry in `kinds`.
+    Returns [(kind, [chunk indices])]. Anchors are never reused.
+
+    Related = highest cosine similarity of the stored embeddings, so no API calls.
+    Partners must sit on a different page (same-doc kinds) or in a different
+    document (cross-document); one is drawn at random from the top_k most similar
+    so repeated runs don't always produce the same pairs. Cross-document falls
+    back to same-document when the corpus has only one source.
+    """
+    import numpy as np
+
+    embs  = np.stack([c["emb"] for c in chunks])
+    embs  = embs / np.linalg.norm(embs, axis=1, keepdims=True)
+    sims  = embs @ embs.T
+    multi_source = len({c["source"] for c in chunks}) > 1
+
+    anchors = list(range(len(chunks)))
+    rng.shuffle(anchors)
+    used_anchors, groups = set(), []
+
+    for kind in kinds:
+        spec = HOP_KINDS[kind]
+        cross = spec["cross_doc"] and multi_source
+        while anchors:
+            a = anchors.pop()
+            if a in used_anchors:
+                continue
+            group = [a]
+            for _ in range(spec["group"] - 1):
+                taken = {(chunks[i]["source"], chunks[i]["page"]) for i in group}
+                eligible = [
+                    j for j in np.argsort(-sims[a])
+                    if j not in group
+                    and (chunks[j]["source"], chunks[j]["page"]) not in taken
+                    and ((chunks[j]["source"] != chunks[a]["source"]) if cross
+                         else (chunks[j]["source"] == chunks[a]["source"]))
+                ][:top_k]
+                if not eligible:
+                    break
+                group.append(int(rng.choice(eligible)))
+            if len(group) == spec["group"]:
+                used_anchors.add(a)
+                groups.append((kind, group))
+                break
+    return groups
+
+
+def _multihop_prompt(kind: str, group: list) -> str:
+    excerpts = "\n\n".join(
+        f"[Excerpt {i + 1}] Document: {c['source']}, Page {c['page']}\n{c['text']}"
+        for i, c in enumerate(group)
+    )
+    return (
+        "You are building a MULTI-HOP evaluation dataset for a Retrieval-Augmented "
+        "Generation system. A multi-hop question can only be answered by combining "
+        "information from several separate passages.\n\n"
+        f"{excerpts}\n\n"
+        f"Write {HOP_KINDS[kind]['instruction']}.\n"
+        "Rules:\n"
+        "- Answering must REQUIRE facts from every excerpt; no single excerpt is enough.\n"
+        "- The question must stand alone: never mention 'excerpt', 'passage', 'chunk' "
+        "or page numbers.\n"
+        "- Ask about specific facts, not opinions. Never invent a link between the excerpts "
+        "that they don't state; the answer must not speculate ('may', 'could', 'suggests').\n"
+        "- The ground truth answer (2-4 sentences) must be fully supported by the excerpts.\n"
+        "If the excerpts don't support a natural question like this, skip instead of forcing one.\n"
+        "Return ONLY valid JSON, no markdown fences, no extra text:\n"
+        '{"question": "...", "ground_truth": "..."}  or  {"skip": true}'
+    )
+
+
+def _parse_json(raw: str) -> dict:
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+    return json.loads(raw.strip())
+
+
+def generate_multihop_test_set(
+    n: int = 15, db_path: str = DB_PATH, seed: Optional[int] = None, progress_callback=None,
+) -> tuple:
+    """
+    Generate n multi-hop questions from groups of related chunks (see
+    sample_chunk_groups), rotating through HOP_KINDS. Groups the model skips are
+    replaced, up to 3n attempts in total.
+
+    Returns (questions, cost) where each question is
+        {"question", "ground_truth", "type": "multi-hop", "hop_kind",
+         "sources": [{"source", "page"}], "chunk_texts": [...]}
+    and cost = {"usd", "input_tokens", "output_tokens", "calls", "skipped"}.
+    """
+    chunks = _load_text_chunks(db_path)
+    if len(chunks) < 3:
+        raise ValueError(f"Not enough text chunks in {db_path}. Ingest documents first.")
+
+    rng    = random.Random(seed)
+    kinds  = [list(HOP_KINDS)[i % len(HOP_KINDS)] for i in range(3 * n)]
+    groups = sample_chunk_groups(chunks, kinds, rng)
+
+    # Thinking off: short structured output, and thinking tokens bill as output.
+    llm   = ChatGoogleGenerativeAI(model=EVAL_LLM_ID, temperature=0.3, thinking_budget=0)
+    wanted = {k: kinds[:n].count(k) for k in HOP_KINDS}  # target mix for the first n
+    questions, in_tok, out_tok, calls, skipped = [], 0, 0, 0, 0
+
+    for kind, idxs in groups:
+        if len(questions) >= n:
+            break
+        if wanted[kind] <= 0 and any(v > 0 for v in wanted.values()):
+            continue  # keep the kind mix balanced while other kinds still need questions
+        group = [chunks[i] for i in idxs]
+        if progress_callback:
+            progress_callback(
+                f"Multi-hop Q{len(questions) + 1}/{n} ({kind}) — "
+                + ", ".join(f"{c['source']} p.{c['page']}" for c in group),
+                len(questions) / n,
+            )
+        try:
+            msg = llm.invoke([HumanMessage(content=_multihop_prompt(kind, group))])
+            i_t, o_t = _usage(msg)
+            in_tok, out_tok, calls = in_tok + i_t, out_tok + o_t, calls + 1
+            qa = _parse_json(msg.content if isinstance(msg.content, str) else str(msg.content))
+        except Exception as e:
+            print(f"  Skipping group ({kind}): {e}")
+            skipped += 1
+            continue
+        if qa.get("skip") or not qa.get("question") or not qa.get("ground_truth"):
+            skipped += 1
+            continue
+        wanted[kind] -= 1
+        questions.append({
+            "question":     qa["question"],
+            "ground_truth": qa["ground_truth"],
+            "type":         "multi-hop",
+            "hop_kind":     kind,
+            "sources":      [{"source": c["source"], "page": c["page"]} for c in group],
+            "chunk_texts":  [c["text"] for c in group],
+        })
+
+    cost = {
+        "usd": round(_cost(in_tok, out_tok), 6), "input_tokens": in_tok,
+        "output_tokens": out_tok, "calls": calls, "skipped": skipped,
+    }
+    return questions, cost
+
+
+def label_single_hop(item: dict) -> dict:
+    """Return a copy of a legacy single-chunk question with type + sources filled in."""
+    out = dict(item)
+    out.setdefault("type", "single-hop")
+    if "sources" not in out and "source" in out:
+        out["sources"] = [{"source": out["source"], "page": out.get("page", 0)}]
+    return out
+
+
+def merge_multihop(test_set: list, candidates: list) -> list:
+    """
+    Label existing questions single-hop and append the multi-hop candidates.
+    Questions already present (same text) are not added twice, so re-running is safe.
+    """
+    merged = [label_single_hop(q) if q.get("type") != "multi-hop" else dict(q) for q in test_set]
+    seen = {q["question"] for q in merged}
+    for c in candidates:
+        if c["question"] not in seen:
+            merged.append({**c, "type": "multi-hop"})
+            seen.add(c["question"])
+    return merged
+
+
 # ── Baseline collection ────────────────────────────────────────────────────────
 
 def create_baseline_collection(progress_callback=None):
@@ -481,6 +704,32 @@ def _judge_accuracy(judge_llm, question: str, ground_truth: str, answer: str) ->
     return correct, in_t, out_t
 
 
+# ── Per-type aggregation ───────────────────────────────────────────────────────
+
+QUESTION_TYPES = ("single-hop", "multi-hop")
+
+
+def _aggregate_by_type(per_q: list, metric_keys: list) -> dict:
+    """
+    {type: {metric: mean, ..., "n": count, "overall_score": weighted}} over per-question rows.
+    Rows without a "type" count as single-hop. NaN / None scores are excluded
+    from each metric's mean, matching how the overall aggregate is computed.
+    """
+    by_type = {}
+    for t in QUESTION_TYPES:
+        rows = [r for r in per_q if r.get("type", "single-hop") == t]
+        if not rows:
+            continue
+        agg = {}
+        for k in metric_keys:
+            vals = [r[k] for r in rows
+                    if isinstance(r.get(k), (int, float)) and r[k] == r[k]]  # r[k]==r[k] drops NaN
+            agg[k] = round(sum(vals) / len(vals), 4) if vals else float("nan")
+        by_type[t] = {**agg, "n": len(rows),
+                      "overall_score": _overall_score({k: v for k, v in agg.items() if v == v})}
+    return by_type
+
+
 # ── Single config run ──────────────────────────────────────────────────────────
 
 def _make_sub_progress(config_idx: int, total_configs: int, parent_cb):
@@ -546,6 +795,7 @@ def run_config(
 
         samples.append({
             "question":     question,
+            "type":         item.get("type", "single-hop"),
             "ground_truth": ground_truth,
             "answer":       answer,
             "contexts":     contexts,
@@ -580,6 +830,7 @@ def run_config(
         t["ragas_judge_out"] = round(ragas_out_q)
         in_tok  = t["answer_in"]  + t["accuracy_judge_in"]  + ragas_in_q
         out_tok = t["answer_out"] + t["accuracy_judge_out"] + ragas_out_q
+        row["type"]      = s["type"]
         row["accuracy"]  = s["accuracy"]
         row["latency_s"] = s["latency_s"]
         row["cost_usd"]  = round(_cost(in_tok, out_tok), 6)
@@ -614,7 +865,13 @@ def run_config(
         "p50_s": round(statistics.median(latencies), 3),
         "max_s": round(max(latencies), 3),
     }
-    return {"aggregate": aggregate, "per_question": per_q, "cost": cost, "latency": latency_summary}
+    return {
+        "aggregate":         aggregate,
+        "aggregate_by_type": _aggregate_by_type(per_q, list(aggregate)),
+        "per_question":      per_q,
+        "cost":              cost,
+        "latency":           latency_summary,
+    }
 
 
 # ── Full evaluation ────────────────────────────────────────────────────────────
@@ -719,6 +976,16 @@ if __name__ == "__main__":
     gen_p = sub.add_parser("generate", help="Generate synthetic test set")
     gen_p.add_argument("--n", type=int, default=25, help="Number of questions (default: 25)")
 
+    mh_p = sub.add_parser("generate-multihop",
+                          help=f"Generate multi-hop candidates into {MULTIHOP_CANDIDATES_PATH} for review")
+    mh_p.add_argument("--n", type=int, default=15, help="Number of questions (default: 15)")
+    mh_p.add_argument("--db", choices=["contextual", "baseline"], default="contextual",
+                      help="Vector DB to sample chunks from (default: contextual)")
+    mh_p.add_argument("--seed", type=int, default=None, help="Random seed for chunk sampling")
+
+    sub.add_parser("merge-multihop",
+                   help="Label test set single-hop and append the reviewed multi-hop candidates")
+
     sub.add_parser("baseline", help="Create baseline DB (no contextual chunking)")
 
     run_p = sub.add_parser("run", help="Run evaluation across configs")
@@ -739,6 +1006,39 @@ if __name__ == "__main__":
         ts = generate_test_set(n=args.n, progress_callback=cli_cb)
         save_test_set(ts)
         print(f"Saved {len(ts)} questions to {TEST_SET_PATH}")
+
+    elif args.command == "generate-multihop":
+        db_path = DB_PATH if args.db == "contextual" else BASELINE_DB_PATH
+        print(f"Generating {args.n} multi-hop questions from {db_path}...")
+        qs, cost = generate_multihop_test_set(
+            n=args.n, db_path=db_path, seed=args.seed, progress_callback=cli_cb,
+        )
+        os.makedirs(EVAL_DATA_PATH, exist_ok=True)
+        with open(MULTIHOP_CANDIDATES_PATH, "w", encoding="utf-8") as f:
+            json.dump(qs, f, ensure_ascii=False, indent=2)
+        kinds = {k: sum(q["hop_kind"] == k for q in qs) for k in HOP_KINDS}
+        print(f"Saved {len(qs)} candidates to {MULTIHOP_CANDIDATES_PATH} — {kinds}")
+        print(f"Generation cost: ${cost['usd']:.5f} "
+              f"({cost['calls']} calls, {cost['input_tokens']} in / {cost['output_tokens']} out tokens, "
+              f"{cost['skipped']} groups skipped)")
+        print("Review/edit the candidates, then run 'python eval.py merge-multihop'.")
+
+    elif args.command == "merge-multihop":
+        ts = load_test_set() or []
+        if not os.path.exists(MULTIHOP_CANDIDATES_PATH):
+            print(f"No candidates at {MULTIHOP_CANDIDATES_PATH}. Run 'generate-multihop' first.")
+            raise SystemExit(1)
+        with open(MULTIHOP_CANDIDATES_PATH, "r", encoding="utf-8") as f:
+            candidates = json.load(f)
+        if ts:
+            backup = TEST_SET_PATH.replace(".json", f".backup-{datetime.now():%Y%m%d-%H%M%S}.json")
+            with open(backup, "w", encoding="utf-8") as f:
+                json.dump(ts, f, ensure_ascii=False, indent=2)
+            print(f"Backed up current test set to {backup}")
+        merged = merge_multihop(ts, candidates)
+        save_test_set(merged)
+        counts = {t: sum(q["type"] == t for q in merged) for t in QUESTION_TYPES}
+        print(f"Saved {len(merged)} questions to {TEST_SET_PATH} — {counts}")
 
     elif args.command == "baseline":
         print("Creating baseline collection (no contextual chunking)...")
@@ -781,6 +1081,19 @@ if __name__ == "__main__":
             lat = r.get("latency", {}).get("avg_s")
             extra = f" | ${cpq:.5f} | {lat:.2f}s" if cpq is not None and lat is not None else " | — | —"
             print(f"{r['label']:<25} | {scores_str}{extra}")
+
+        by_type_cfgs = [r for r in results["configs"] if r.get("aggregate_by_type")]
+        if by_type_cfgs:
+            print(f"\n{'Config':<25} | " + " | ".join(
+                f"{t} acc (n) | {t} overall" for t in QUESTION_TYPES))
+            print("-" * 100)
+            for r in by_type_cfgs:
+                cells = []
+                for t in QUESTION_TYPES:
+                    bt = r["aggregate_by_type"].get(t)
+                    cells.append(f"{bt.get('accuracy', float('nan')):.3f} ({bt['n']}) | "
+                                 f"{bt['overall_score']:.3f}" if bt else "— | —")
+                print(f"{r['label']:<25} | " + " | ".join(cells))
 
         total_usd = sum(r.get("cost", {}).get("total_usd", 0) for r in results["configs"])
         print(f"\nTotal LLM cost recorded in this file: ${total_usd:.5f}")

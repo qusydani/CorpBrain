@@ -490,11 +490,19 @@ elif active_view == "Eval":
 
         with col_gen_info:
             if test_set:
-                st.success(f"{len(test_set)} questions loaded from `eval_data/test_set.json`")
+                n_multi = sum(q.get("type") == "multi-hop" for q in test_set)
+                st.success(
+                    f"{len(test_set)} questions loaded from `eval_data/test_set.json` "
+                    f"({len(test_set) - n_multi} single-hop · {n_multi} multi-hop)"
+                )
                 with st.expander("Preview test set"):
                     for i, item in enumerate(test_set[:5]):
+                        srcs = item.get("sources") or [
+                            {"source": item.get("source", "?"), "page": item.get("page", "?")}
+                        ]
+                        where = "; ".join(f"{s['source']} p.{s['page']}" for s in srcs)
                         st.markdown(
-                            f"**Q{i + 1}** ({item.get('source', '?')} p.{item.get('page', '?')}): "
+                            f"**Q{i + 1}** [{item.get('type', 'single-hop')}] ({where}): "
                             f"{item['question']}"
                         )
                         st.caption(f"A: {item['ground_truth'][:150]}...")
@@ -730,6 +738,36 @@ elif active_view == "Eval":
             if any("cost" not in c for c in results["configs"]):
                 st.caption("— = not recorded (run made before accuracy/cost tracking was added).")
 
+            # ── Scores by question type ───────────────────────────────────────
+            # Hidden for runs made before the multi-hop test set existed.
+            typed_cfgs = [r for r in results["configs"] if r.get("aggregate_by_type")]
+            if typed_cfgs:
+                st.markdown("#### Scores by question type")
+                type_rows = []
+                for r in sorted(typed_cfgs, key=lambda r: r.get("overall_score", 0), reverse=True):
+                    bt = r["aggregate_by_type"]
+                    single, multi = bt.get("single-hop", {}), bt.get("multi-hop", {})
+                    type_rows.append({
+                        "Config":              r["label"],
+                        "Accuracy · All":      r["aggregate"].get("accuracy"),
+                        "Accuracy · Single":   single.get("accuracy"),
+                        "Accuracy · Multi":    multi.get("accuracy"),
+                        "Overall · All":       r.get("overall_score"),
+                        "Overall · Single":    single.get("overall_score"),
+                        "Overall · Multi":     multi.get("overall_score"),
+                    })
+                type_df = pd.DataFrame(type_rows).set_index("Config").apply(pd.to_numeric)
+                st.dataframe(
+                    type_df.style
+                      .highlight_max(axis=0, color="#1a6b3c")
+                      .format("{:.3f}", na_rep="—"),
+                    use_container_width=True,
+                )
+                n_by_type = typed_cfgs[0]["aggregate_by_type"]
+                st.caption(" · ".join(
+                    f"{t}: {v['n']} questions" for t, v in n_by_type.items()
+                ))
+
             # ── Bar chart ─────────────────────────────────────────────────────
             chart_options = ["Overall"] + [METRIC_DISPLAY.get(k, k) for k in metric_keys]
             selected_metric = st.selectbox("Chart metric:", chart_options, key="eval_chart_metric")
@@ -930,7 +968,7 @@ elif active_view == "Eval":
                 sel_cfg = st.selectbox("Config:", cfg_labels, key="eval_perq_cfg")
                 cfg_data = next(r for r in results["configs"] if r["label"] == sel_cfg)
                 per_q_df = pd.DataFrame(cfg_data["per_question"]).drop(columns=["tokens"], errors="ignore")
-                per_q_df = per_q_df.rename(columns={"latency_s": "Latency (s)", "cost_usd": "$ cost", "answer": "Answer"})
+                per_q_df = per_q_df.rename(columns={"latency_s": "Latency (s)", "cost_usd": "$ cost", "answer": "Answer", "type": "Type"})
                 per_q_df.columns = [
                     METRIC_DISPLAY.get(c, c) if c != "question" else "Question"
                     for c in per_q_df.columns
