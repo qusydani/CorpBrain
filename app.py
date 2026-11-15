@@ -661,9 +661,19 @@ elif active_view == "Eval":
                     i + 1 for i, r in enumerate(sorted_by_metric) if r["label"] == best["label"]
                 )
 
+            def _fmt_cost(cfg):
+                v = cfg.get("cost", {}).get("per_question_usd")
+                return f"${v:.5f}" if v is not None else "—"
+
+            def _fmt_latency(cfg):
+                v = cfg.get("latency", {}).get("avg_s")
+                return f"{v:.2f}s" if v is not None else "—"
+
             with st.container(border=True):
                 st.markdown(f"**Best configuration: `{best['label']}`**  "
-                            f"— Overall score **{best['overall_score']:.3f}**")
+                            f"— Overall score **{best['overall_score']:.3f}**  "
+                            f"· Cost/question **{_fmt_cost(best)}**  "
+                            f"· Avg latency **{_fmt_latency(best)}**")
                 b_cols = st.columns(len(metric_keys))
                 for col, k in zip(b_cols, metric_keys):
                     rank = metric_ranks[k]
@@ -686,19 +696,54 @@ elif active_view == "Eval":
                 row = {
                     "Config":        cfg_result["label"],
                     "Overall":       round(cfg_result.get("overall_score", 0), 3),
+                    "Accuracy":      agg.get("accuracy"),  # None for pre-accuracy runs
                 }
-                row.update({METRIC_DISPLAY.get(k, k): round(v, 3) for k, v in agg.items()})
+                row.update({
+                    METRIC_DISPLAY.get(k, k): round(v, 3)
+                    for k, v in agg.items() if k != "accuracy"
+                })
+                row["$/question"]      = cfg_result.get("cost", {}).get("per_question_usd")
+                row["Avg latency (s)"] = cfg_result.get("latency", {}).get("avg_s")
                 rows.append(row)
 
             df = pd.DataFrame(rows).set_index("Config")
+            # Hide new-metric columns entirely when no config recorded them (pre-#2 runs)
+            for c in ("Accuracy", "$/question", "Avg latency (s)"):
+                df[c] = pd.to_numeric(df[c])
+                if df[c].isna().all():
+                    df = df.drop(columns=c)
+            # Higher is better for scores; lower is better for cost and latency
+            low_cols   = [c for c in ("$/question", "Avg latency (s)") if c in df.columns]
+            score_cols = [c for c in df.columns if c not in low_cols]
             st.dataframe(
-                df.style.highlight_max(axis=0, color="#1a6b3c"),
+                df.style
+                  .highlight_max(axis=0, subset=score_cols, color="#1a6b3c")
+                  .highlight_min(axis=0, subset=low_cols, color="#1a6b3c")
+                  # One format() call: a second call would reset unlisted columns to defaults
+                  .format(
+                      {**{c: "{:.3f}" for c in score_cols},
+                       "$/question": "${:.5f}", "Avg latency (s)": "{:.2f}"},
+                      na_rep="—",
+                  ),
                 use_container_width=True,
             )
+            if any("cost" not in c for c in results["configs"]):
+                st.caption("— = not recorded (run made before accuracy/cost tracking was added).")
 
             # ── Bar chart ─────────────────────────────────────────────────────
             chart_options = ["Overall"] + [METRIC_DISPLAY.get(k, k) for k in metric_keys]
             selected_metric = st.selectbox("Chart metric:", chart_options, key="eval_chart_metric")
+
+            def _zoomed_range(vals, headroom):
+                """
+                Y-axis range zoomed in on the bars so small differences stay visible.
+                Floor sits 2× the spread below the lowest bar. When all bars are equal
+                (e.g. a single config), spread is 0 — fall back to a 10% pad so the
+                bar still has visible height instead of sitting exactly on the floor.
+                """
+                lo, hi = min(vals), max(vals)
+                pad = (hi - lo) * 2 or max(abs(lo) * 0.1, 0.05)
+                return [max(0, lo - pad), hi * headroom if hi > 0 else 1]
 
             if selected_metric == "Overall":
                 sort_key = lambda r: r.get("overall_score", 0)
@@ -727,11 +772,9 @@ elif active_view == "Eval":
                 text=y_labels,
                 textposition="outside",
             ))
-            y_spread = max(y_vals) - min(y_vals)
-            y_floor = max(0, min(y_vals) - y_spread * 2)
             bar_fig.update_layout(
                 title=f"{selected_metric} by Configuration (sorted by {selected_metric})",
-                yaxis=dict(range=[y_floor, max(y_vals) * 1.06], title=selected_metric),
+                yaxis=dict(range=_zoomed_range(y_vals, 1.06), title=selected_metric),
                 xaxis_title="Config",
                 height=450,
                 margin=dict(l=40, r=40, t=60, b=120),
@@ -835,11 +878,10 @@ elif active_view == "Eval":
                             textposition="outside",
                         ))
                         all_f = no_rerank_vals + rerank_vals
-                        f_spread = max(all_f) - min(all_f)
                         fig2.update_layout(
                             barmode="group",
                             title="Faithfulness: Rerank vs No Rerank",
-                            yaxis=dict(range=[max(0, min(all_f) - f_spread * 2), max(all_f) * 1.08], title="Faithfulness"),
+                            yaxis=dict(range=_zoomed_range(all_f, 1.08), title="Faithfulness"),
                             xaxis_title="Strategy",
                             height=380,
                             margin=dict(l=30, r=20, t=50, b=60),
@@ -872,10 +914,9 @@ elif active_view == "Eval":
                             text=[f"{v:.3f}" for v in relv_vals],
                             textposition="outside",
                         ))
-                        r_spread = max(relv_vals) - min(relv_vals)
                         fig3.update_layout(
                             title="Avg Answer Relevancy by Retriever Type",
-                            yaxis=dict(range=[max(0, min(relv_vals) - r_spread * 2), max(relv_vals) * 1.08], title="Ans. Relevancy"),
+                            yaxis=dict(range=_zoomed_range(relv_vals, 1.08), title="Ans. Relevancy"),
                             xaxis_title="Retriever",
                             height=380,
                             margin=dict(l=30, r=20, t=50, b=60),
@@ -888,7 +929,8 @@ elif active_view == "Eval":
                 cfg_labels = [r["label"] for r in results["configs"]]
                 sel_cfg = st.selectbox("Config:", cfg_labels, key="eval_perq_cfg")
                 cfg_data = next(r for r in results["configs"] if r["label"] == sel_cfg)
-                per_q_df = pd.DataFrame(cfg_data["per_question"])
+                per_q_df = pd.DataFrame(cfg_data["per_question"]).drop(columns=["tokens"], errors="ignore")
+                per_q_df = per_q_df.rename(columns={"latency_s": "Latency (s)", "cost_usd": "$ cost", "answer": "Answer"})
                 per_q_df.columns = [
                     METRIC_DISPLAY.get(c, c) if c != "question" else "Question"
                     for c in per_q_df.columns

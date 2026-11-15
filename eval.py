@@ -7,6 +7,8 @@ CLI usage:
     python eval.py run [--strategies dense bm25 hybrid]
                        [--no-baseline]      # Skip baseline comparison
                        [--no-reranking]     # Skip no-rerank configs
+                       [--limit N]          # Only the first N questions
+                       [--out PATH]         # Results file (default eval_data/eval_results.json)
 
 Requires: pip install ragas>=0.2.0
 """
@@ -15,6 +17,8 @@ import os
 import json
 import random
 import argparse
+import statistics
+import time
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from typing import Optional
@@ -24,8 +28,8 @@ import fitz
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import HumanMessage
-from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -43,6 +47,40 @@ RESULTS_PATH     = os.path.join(EVAL_DATA_PATH, "eval_results.json")
 # Gemini 2.5 Flash for all eval LLM calls — measures retrieval quality, not LLM capability
 EVAL_LLM_ID = "gemini-2.5-flash"
 
+# Gemini 2.5 Flash paid-tier list price, USD per token (text input / output).
+# Output includes thinking tokens — langchain-google-genai folds them into output_tokens.
+PRICE_IN_PER_TOKEN  = 0.30 / 1_000_000
+PRICE_OUT_PER_TOKEN = 2.50 / 1_000_000
+
+
+def _cost(input_tokens: float, output_tokens: float) -> float:
+    return input_tokens * PRICE_IN_PER_TOKEN + output_tokens * PRICE_OUT_PER_TOKEN
+
+
+def _usage(message) -> tuple:
+    """(input_tokens, output_tokens) from a LangChain AIMessage, 0s if absent."""
+    um = getattr(message, "usage_metadata", None) or {}
+    return int(um.get("input_tokens", 0)), int(um.get("output_tokens", 0))
+
+
+class UsageTracker(BaseCallbackHandler):
+    """Sums token usage across every chat-model call it is attached to."""
+
+    def __init__(self):
+        self.input_tokens  = 0
+        self.output_tokens = 0
+        self.calls         = 0
+
+    def on_llm_end(self, response, **kwargs):
+        for gens in response.generations:
+            for g in gens:
+                msg = getattr(g, "message", None)
+                if msg is not None:
+                    i, o = _usage(msg)
+                    self.input_tokens  += i
+                    self.output_tokens += o
+                    self.calls         += 1
+
 METRIC_DISPLAY = {
     "faithfulness":                           "Faithfulness",
     "answer_relevancy":                       "Ans. Relevancy",
@@ -51,6 +89,7 @@ METRIC_DISPLAY = {
     "context_precision":                      "Ctx. Precision",
     "context_recall":                         "Ctx. Recall",
     "answer_correctness":                     "Ans. Correctness",
+    "accuracy":                               "Accuracy",
 }
 
 
@@ -85,6 +124,9 @@ _METRIC_WEIGHTS = {
     # RAGAS <0.2 fallback names
     "context_precision":                    0.25,
     "context_recall":                       0.25,
+    # Headline metric shown on its own; kept out of the overall score so scores
+    # stay comparable with runs made before accuracy existed.
+    "accuracy":                             0.0,
 }
 
 
@@ -147,9 +189,9 @@ def save_test_set(test_set: list):
         json.dump(test_set, f, ensure_ascii=False, indent=2)
 
 
-def load_results() -> Optional[dict]:
-    if os.path.exists(RESULTS_PATH):
-        with open(RESULTS_PATH, "r", encoding="utf-8") as f:
+def load_results(path: str = RESULTS_PATH) -> Optional[dict]:
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     return None
 
@@ -167,7 +209,7 @@ def baseline_exists() -> bool:
 
 def generate_test_set(n: int = 25, progress_callback=None) -> list:
     """
-    Sample n text chunks from ChromaDB. For each, prompt Claude Haiku to produce
+    Sample n text chunks from ChromaDB. For each, prompt Gemini Flash to produce
     a question + ground-truth answer pair.
 
     Returns a list of dicts:
@@ -212,7 +254,7 @@ def generate_test_set(n: int = 25, progress_callback=None) -> list:
 
         try:
             raw = llm.invoke([HumanMessage(content=prompt)]).content.strip()
-            # Strip markdown fences if Haiku wrapped the JSON
+            # Strip markdown fences if the model wrapped the JSON
             if raw.startswith("```"):
                 raw = raw.split("```")[1]
                 if raw.startswith("json"):
@@ -334,20 +376,19 @@ def create_baseline_collection(progress_callback=None):
 def _run_ragas(samples: list, ragas_llm, ragas_emb) -> tuple:
     """
     Run all 5 RAGAS metrics on collected samples.
-    Returns (aggregate_scores: dict, per_question_scores: list[dict]).
+    Returns (aggregate_scores: dict, per_question_scores: list[dict], usage: UsageTracker).
+
+    AnswerRelevancy(strictness=1): the default strictness=3 asks the judge for
+    3 generations in one call (n=3). Gemini returns only 1, which produced NaN /
+    degraded scores. One generation per question is all we need.
 
     RunConfig explanation
     ---------------------
-    RAGAS fires all (metric × question) scoring jobs concurrently by default
-    (125 jobs for 25 questions × 5 metrics). This saturates Anthropic's rate
-    limits and causes TimeoutError on many jobs, which silently produce NaN
-    and skew aggregate means.
+    RAGAS fires all (metric × question) scoring jobs concurrently by default.
+    Unbounded concurrency trips rate limits and produces TimeoutError → NaN.
 
-    max_workers=4  — Haiku's Tier 1 rate limit is 50 RPM. At ~7s/job, 4 workers
-                     ≈ 34 RPM — safely under the cap. 8 workers ≈ 68 RPM which
-                     exceeds the limit and causes the TimeoutErrors.
-    timeout=120    — 2-minute per-job deadline (Gemini Flash is fast; 60s default
-                     is too tight when the API is under load)
+    max_workers=4  — keeps the request rate comfortably under Gemini's per-minute cap
+    timeout=120    — 2-minute per-job deadline (60s default is too tight under load)
     max_retries=3  — retry timed-out or rate-limited jobs before giving up
     """
     from ragas import evaluate
@@ -374,13 +415,18 @@ def _run_ragas(samples: list, ragas_llm, ragas_emb) -> tuple:
     ])
 
     run_cfg = RunConfig(max_workers=4, timeout=120, max_retries=3)
+    usage   = UsageTracker()
 
     result = evaluate(
         dataset=dataset,
-        metrics=[Faithfulness(), AnswerRelevancy(), CtxPrec(), CtxRecall(), AnswerCorrectness()],
+        metrics=[
+            Faithfulness(), AnswerRelevancy(strictness=1),
+            CtxPrec(), CtxRecall(), AnswerCorrectness(),
+        ],
         llm=ragas_llm,
         embeddings=ragas_emb,
         run_config=run_cfg,
+        callbacks=[usage],
     )
 
     df         = result.to_pandas()
@@ -399,7 +445,40 @@ def _run_ragas(samples: list, ragas_llm, ragas_emb) -> tuple:
         .rename(columns={"user_input": "question"})
         .to_dict(orient="records")
     )
-    return aggregate, per_q
+    return aggregate, per_q, usage
+
+
+# ── Binary answer accuracy ─────────────────────────────────────────────────────
+
+def _judge_accuracy(judge_llm, question: str, ground_truth: str, answer: str) -> tuple:
+    """
+    One LLM-judge call: is the answer correct w.r.t. the ground truth?
+    Returns (correct, input_tokens, output_tokens) where correct is 1, 0,
+    or None if the judge's output couldn't be parsed.
+    """
+    prompt = (
+        "You are grading an answer produced by a question-answering system.\n\n"
+        f"Question: {question}\n\n"
+        f"Reference answer: {ground_truth}\n\n"
+        f"System answer: {answer}\n\n"
+        "Is the system answer correct? It is correct if it states the key facts of the "
+        "reference answer without contradicting it; extra detail and different wording "
+        "are fine. A refusal or 'not in the context' answer is incorrect.\n"
+        'Return ONLY valid JSON, no markdown fences: {"correct": true} or {"correct": false}'
+    )
+    msg = judge_llm.invoke([HumanMessage(content=prompt)])
+    in_t, out_t = _usage(msg)
+    raw = (msg.content if isinstance(msg.content, str) else str(msg.content)).strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+    try:
+        correct = int(bool(json.loads(raw.strip())["correct"]))
+    except Exception:
+        low = raw.lower().replace(" ", "")
+        correct = 1 if '"correct":true' in low else 0 if '"correct":false' in low else None
+    return correct, in_t, out_t
 
 
 # ── Single config run ──────────────────────────────────────────────────────────
@@ -417,13 +496,18 @@ def run_config(
     test_set:   list,
     config:     EvalConfig,
     llm:        ChatGoogleGenerativeAI,
+    judge_llm:  ChatGoogleGenerativeAI,
     ragas_llm,
     ragas_emb,
     progress_callback=None,
 ) -> dict:
     """
     Evaluate one EvalConfig.
-    Returns {"aggregate": {metric: score}, "per_question": [{"question", metric...}]}
+    Returns {"aggregate", "per_question", "cost", "latency"}.
+
+    Latency is per question: retrieval + answer generation (what a user waits for).
+    Cost covers every LLM call: answer generation, accuracy judge and RAGAS judge.
+    RAGAS usage is only observable per config, so it's split evenly across questions.
     """
     retriever = Retriever(
         strategy=config.strategy, rerank=config.reranking, contextual=config.contextual,
@@ -441,6 +525,7 @@ def run_config(
             )
 
         # Retrieve top 5 (reranked, or first 5 candidates when reranking is off)
+        t0       = time.perf_counter()
         docs     = retriever.retrieve(question)
         contexts = [doc.page_content for doc in docs]
 
@@ -452,21 +537,84 @@ def run_config(
             f"Context:\n{context_text}\n\n"
             f"Question: {question}"
         )
-        answer = llm.invoke([HumanMessage(content=answer_prompt)]).content
+        answer_msg = llm.invoke([HumanMessage(content=answer_prompt)])
+        latency    = time.perf_counter() - t0
+        answer     = answer_msg.content
+        ans_in, ans_out = _usage(answer_msg)
+
+        correct, acc_in, acc_out = _judge_accuracy(judge_llm, question, ground_truth, answer)
 
         samples.append({
             "question":     question,
             "ground_truth": ground_truth,
             "answer":       answer,
             "contexts":     contexts,
+            "latency_s":    round(latency, 3),
+            "accuracy":     correct,
+            "tokens": {
+                "answer_in": ans_in, "answer_out": ans_out,
+                "accuracy_judge_in": acc_in, "accuracy_judge_out": acc_out,
+            },
         })
 
     # RAGAS scoring (batch — one evaluate() call per config)
     if progress_callback:
         progress_callback(f"[{config.label}] Scoring with RAGAS...", 0.95)
 
-    aggregate, per_q = _run_ragas(samples, ragas_llm, ragas_emb)
-    return {"aggregate": aggregate, "per_question": per_q}
+    aggregate, per_q, ragas_usage = _run_ragas(samples, ragas_llm, ragas_emb)
+
+    # ── Accuracy ──────────────────────────────────────────────────────────────
+    graded = [s["accuracy"] for s in samples if s["accuracy"] is not None]
+    if len(graded) < len(samples):
+        print(f"  WARNING: accuracy judge output unparseable for "
+              f"{len(samples) - len(graded)} question(s); excluded from the mean.")
+    aggregate["accuracy"] = round(sum(graded) / len(graded), 4) if graded else float("nan")
+
+    # ── Cost & latency ────────────────────────────────────────────────────────
+    n = len(samples)
+    ragas_in_q  = ragas_usage.input_tokens  / n
+    ragas_out_q = ragas_usage.output_tokens / n
+    for s, row in zip(samples, per_q):
+        t = s["tokens"]
+        t["ragas_judge_in"]  = round(ragas_in_q)
+        t["ragas_judge_out"] = round(ragas_out_q)
+        in_tok  = t["answer_in"]  + t["accuracy_judge_in"]  + ragas_in_q
+        out_tok = t["answer_out"] + t["accuracy_judge_out"] + ragas_out_q
+        row["accuracy"]  = s["accuracy"]
+        row["latency_s"] = s["latency_s"]
+        row["cost_usd"]  = round(_cost(in_tok, out_tok), 6)
+        row["tokens"]    = t
+        row["answer"]    = s["answer"]
+
+    answer_cost = sum(_cost(s["tokens"]["answer_in"], s["tokens"]["answer_out"]) for s in samples)
+    acc_cost    = sum(_cost(s["tokens"]["accuracy_judge_in"], s["tokens"]["accuracy_judge_out"])
+                      for s in samples)
+    ragas_cost  = _cost(ragas_usage.input_tokens, ragas_usage.output_tokens)
+    total_cost  = answer_cost + acc_cost + ragas_cost
+    latencies   = [s["latency_s"] for s in samples]
+
+    cost = {
+        "total_usd":               round(total_cost, 6),
+        "per_question_usd":        round(total_cost / n, 6),
+        "answer_per_question_usd": round(answer_cost / n, 6),
+        "breakdown_usd": {
+            "answer":         round(answer_cost, 6),
+            "accuracy_judge": round(acc_cost, 6),
+            "ragas_judge":    round(ragas_cost, 6),
+        },
+        "tokens": {
+            "input":  sum(s["tokens"]["answer_in"] + s["tokens"]["accuracy_judge_in"] for s in samples)
+                      + ragas_usage.input_tokens,
+            "output": sum(s["tokens"]["answer_out"] + s["tokens"]["accuracy_judge_out"] for s in samples)
+                      + ragas_usage.output_tokens,
+        },
+    }
+    latency_summary = {
+        "avg_s": round(statistics.mean(latencies), 3),
+        "p50_s": round(statistics.median(latencies), 3),
+        "max_s": round(max(latencies), 3),
+    }
+    return {"aggregate": aggregate, "per_question": per_q, "cost": cost, "latency": latency_summary}
 
 
 # ── Full evaluation ────────────────────────────────────────────────────────────
@@ -475,6 +623,7 @@ def run_full_evaluation(
     configs:           list,
     test_set:          list,
     progress_callback=None,
+    results_path:      str = RESULTS_PATH,
 ) -> dict:
     """
     Run evaluation across all configs. Saves results to eval_data/eval_results.json.
@@ -493,7 +642,7 @@ def run_full_evaluation(
 
     # ── Resume detection ──────────────────────────────────────────────────────
     # Load any previously checkpointed results so we can skip finished configs.
-    existing = load_results()
+    existing = load_results(results_path)
     if existing:
         done_labels = {r["label"] for r in existing.get("configs", [])}
         pending     = [c for c in configs if c.label not in done_labels]
@@ -510,14 +659,14 @@ def run_full_evaluation(
         return existing
 
     # ── Load shared components once ───────────────────────────────────────────
-    # Flash for cheap generation tasks (answer gen); Haiku for RAGAS scoring —
-    # Haiku follows structured generation instructions reliably (fixes the
-    # "1 generation instead of 3" Answer Relevancy issue that Gemini Flash had)
-    # and is ~3.75× cheaper than Sonnet ($0.80/$4 vs $3/$15 per MTok in/out).
-    # Full 25q × 12 config run costs ~$8 with Haiku vs ~$36 with Sonnet.
+    # Gemini Flash for everything. Judges run with thinking disabled
+    # (thinking_budget=0): grading doesn't need it, and thinking tokens bill as
+    # output, which would dominate the cost. Answer generation keeps the defaults
+    # so the system under test is unchanged.
     # Retrieval components (embeddings, reranker) are shared via retriever.py.
     llm             = ChatGoogleGenerativeAI(model=EVAL_LLM_ID, temperature=0)
-    ragas_llm       = LangchainLLMWrapper(ChatAnthropic(model="claude-haiku-4-5-20251001", temperature=0))
+    judge_llm       = ChatGoogleGenerativeAI(model=EVAL_LLM_ID, temperature=0, thinking_budget=0)
+    ragas_llm       = LangchainLLMWrapper(judge_llm)
     ragas_emb       = LangchainEmbeddingsWrapper(get_embedding_model())
 
     total = len(configs)
@@ -530,7 +679,7 @@ def run_full_evaluation(
             )
 
         config_result = run_config(
-            test_set, config, llm, ragas_llm, ragas_emb,
+            test_set, config, llm, judge_llm, ragas_llm, ragas_emb,
             progress_callback=_make_sub_progress(overall_idx, total, progress_callback),
         )
         results.append({
@@ -546,7 +695,7 @@ def run_full_evaluation(
             "n_questions": len(test_set),
             "configs":     results,
         }
-        with open(RESULTS_PATH, "w", encoding="utf-8") as f:
+        with open(results_path, "w", encoding="utf-8") as f:
             json.dump(checkpoint, f, ensure_ascii=False, indent=2)
 
         if progress_callback:
@@ -577,6 +726,8 @@ if __name__ == "__main__":
                        choices=["dense", "bm25", "hybrid"])
     run_p.add_argument("--no-baseline",  action="store_true", help="Skip baseline configs")
     run_p.add_argument("--no-reranking", action="store_true", help="Skip no-reranking configs")
+    run_p.add_argument("--limit", type=int, default=None, help="Only evaluate the first N questions")
+    run_p.add_argument("--out", default=RESULTS_PATH, help=f"Results file (default: {RESULTS_PATH})")
 
     args = parser.parse_args()
 
@@ -599,6 +750,8 @@ if __name__ == "__main__":
         if not ts:
             print(f"No test set found. Run 'python eval.py generate' first.")
             raise SystemExit(1)
+        if args.limit:
+            ts = ts[: args.limit]
 
         reranking_opts  = [True, False] if not args.no_reranking  else [True]
         contextual_opts = [True]
@@ -616,17 +769,22 @@ if __name__ == "__main__":
         ]
 
         print(f"Running {len(configs)} configs × {len(ts)} questions...\n")
-        results = run_full_evaluation(configs, ts, progress_callback=cli_cb)
+        results = run_full_evaluation(configs, ts, progress_callback=cli_cb, results_path=args.out)
 
         print(f"\n{'Config':<25} | " + " | ".join(
             METRIC_DISPLAY.get(k, k) for k in next(iter(results["configs"]))["aggregate"]
-        ))
-        print("-" * 90)
+        ) + " | $/question | Avg latency")
+        print("-" * 120)
         for r in results["configs"]:
             scores_str = " | ".join(f"{v:.3f}" for v in r["aggregate"].values())
-            print(f"{r['label']:<25} | {scores_str}")
+            cpq = r.get("cost", {}).get("per_question_usd")
+            lat = r.get("latency", {}).get("avg_s")
+            extra = f" | ${cpq:.5f} | {lat:.2f}s" if cpq is not None and lat is not None else " | — | —"
+            print(f"{r['label']:<25} | {scores_str}{extra}")
 
-        print(f"\nFull results → {RESULTS_PATH}")
+        total_usd = sum(r.get("cost", {}).get("total_usd", 0) for r in results["configs"])
+        print(f"\nTotal LLM cost recorded in this file: ${total_usd:.5f}")
+        print(f"Full results → {args.out}")
 
     else:
         parser.print_help()
