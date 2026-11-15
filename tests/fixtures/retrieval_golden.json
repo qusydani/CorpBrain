@@ -1,0 +1,5181 @@
+{
+  "queries": [
+    "How do I adjust the scope for windage?",
+    "What is the effective range of the rifle?",
+    "How should the weapon be cleaned after firing?",
+    "What are the steps to zero the sight?"
+  ],
+  "eval": {
+    "dense|rerank=True|contextual=True": {
+      "How do I adjust the scope for windage?": {
+        "candidates": [
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "855029a4d9c2459b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1100d59e8cab9ac9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          }
+        ],
+        "top": [
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "1100d59e8cab9ac9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          }
+        ]
+      },
+      "What is the effective range of the rifle?": {
+        "candidates": [
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "fb6616091be28a89",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "61cd06a778f630e2",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "50356b962e8fbcb9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "52c1ae931b868d9f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          }
+        ],
+        "top": [
+          {
+            "sha": "61cd06a778f630e2",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          }
+        ]
+      },
+      "How should the weapon be cleaned after firing?": {
+        "candidates": [
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f795e9b0289f8960",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 10
+          },
+          {
+            "sha": "855029a4d9c2459b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "fd7e5008eccb0d12",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 10
+          },
+          {
+            "sha": "50356b962e8fbcb9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          }
+        ],
+        "top": [
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "50356b962e8fbcb9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          }
+        ]
+      },
+      "What are the steps to zero the sight?": {
+        "candidates": [
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "6cc66c4df350cfcc",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          }
+        ],
+        "top": [
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          }
+        ]
+      }
+    },
+    "dense|rerank=False|contextual=True": {
+      "How do I adjust the scope for windage?": {
+        "candidates": [
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "855029a4d9c2459b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1100d59e8cab9ac9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          }
+        ],
+        "top": [
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          }
+        ]
+      },
+      "What is the effective range of the rifle?": {
+        "candidates": [
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "fb6616091be28a89",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "61cd06a778f630e2",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "50356b962e8fbcb9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "52c1ae931b868d9f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          }
+        ],
+        "top": [
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "fb6616091be28a89",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          }
+        ]
+      },
+      "How should the weapon be cleaned after firing?": {
+        "candidates": [
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f795e9b0289f8960",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 10
+          },
+          {
+            "sha": "855029a4d9c2459b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "fd7e5008eccb0d12",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 10
+          },
+          {
+            "sha": "50356b962e8fbcb9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          }
+        ],
+        "top": [
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f795e9b0289f8960",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 10
+          }
+        ]
+      },
+      "What are the steps to zero the sight?": {
+        "candidates": [
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "6cc66c4df350cfcc",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          }
+        ],
+        "top": [
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          }
+        ]
+      }
+    },
+    "dense|rerank=True|contextual=False": {
+      "How do I adjust the scope for windage?": {
+        "candidates": [
+          {
+            "sha": "da4788f3738c28b0",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "32ab7d3b010ff11f",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 16
+          },
+          {
+            "sha": "b3e89824df9d0fb2",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          },
+          {
+            "sha": "48b7afc686af90a5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 52
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "f1ec9cf46110830b",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          }
+        ],
+        "top": [
+          {
+            "sha": "da4788f3738c28b0",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "f1ec9cf46110830b",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          },
+          {
+            "sha": "b3e89824df9d0fb2",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          }
+        ]
+      },
+      "What is the effective range of the rifle?": {
+        "candidates": [
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "8676f00d17e8eb31",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "605bc3cbaf5736f0",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "4599922937206588",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 6
+          },
+          {
+            "sha": "cfa680149b8eb8eb",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 52
+          },
+          {
+            "sha": "70185794ecced2bc",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 9
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          }
+        ],
+        "top": [
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "605bc3cbaf5736f0",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          }
+        ]
+      },
+      "How should the weapon be cleaned after firing?": {
+        "candidates": [
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "e72dd46df49961dd",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 22
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "578a08c3d2eac842",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 21
+          },
+          {
+            "sha": "8676f00d17e8eb31",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "19a2ecf5214ffe95",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 14
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "6efedd5c4765522f",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          }
+        ],
+        "top": [
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "6efedd5c4765522f",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          }
+        ]
+      },
+      "What are the steps to zero the sight?": {
+        "candidates": [
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "eeae88a8f57b2f57",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 2
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "a0fa1ff45551ce17",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 20
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          },
+          {
+            "sha": "e72dd46df49961dd",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 22
+          },
+          {
+            "sha": "4599922937206588",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 6
+          },
+          {
+            "sha": "ee4e0d92384fdbbf",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 26
+          }
+        ],
+        "top": [
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "e72dd46df49961dd",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 22
+          },
+          {
+            "sha": "a0fa1ff45551ce17",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 20
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          }
+        ]
+      }
+    },
+    "dense|rerank=False|contextual=False": {
+      "How do I adjust the scope for windage?": {
+        "candidates": [
+          {
+            "sha": "da4788f3738c28b0",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "32ab7d3b010ff11f",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 16
+          },
+          {
+            "sha": "b3e89824df9d0fb2",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          },
+          {
+            "sha": "48b7afc686af90a5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 52
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "f1ec9cf46110830b",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          }
+        ],
+        "top": [
+          {
+            "sha": "da4788f3738c28b0",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "32ab7d3b010ff11f",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 16
+          }
+        ]
+      },
+      "What is the effective range of the rifle?": {
+        "candidates": [
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "8676f00d17e8eb31",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "605bc3cbaf5736f0",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "4599922937206588",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 6
+          },
+          {
+            "sha": "cfa680149b8eb8eb",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 52
+          },
+          {
+            "sha": "70185794ecced2bc",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 9
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          }
+        ],
+        "top": [
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "8676f00d17e8eb31",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "605bc3cbaf5736f0",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "4599922937206588",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 6
+          }
+        ]
+      },
+      "How should the weapon be cleaned after firing?": {
+        "candidates": [
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "e72dd46df49961dd",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 22
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "578a08c3d2eac842",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 21
+          },
+          {
+            "sha": "8676f00d17e8eb31",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "19a2ecf5214ffe95",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 14
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "6efedd5c4765522f",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          }
+        ],
+        "top": [
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "e72dd46df49961dd",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 22
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          }
+        ]
+      },
+      "What are the steps to zero the sight?": {
+        "candidates": [
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "eeae88a8f57b2f57",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 2
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "a0fa1ff45551ce17",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 20
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          },
+          {
+            "sha": "e72dd46df49961dd",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 22
+          },
+          {
+            "sha": "4599922937206588",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 6
+          },
+          {
+            "sha": "ee4e0d92384fdbbf",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 26
+          }
+        ],
+        "top": [
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "eeae88a8f57b2f57",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 2
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          }
+        ]
+      }
+    },
+    "bm25|rerank=True|contextual=True": {
+      "How do I adjust the scope for windage?": {
+        "candidates": [
+          {
+            "sha": "65fe196524062934",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          },
+          {
+            "sha": "52c1ae931b868d9f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "b48df84e490c6abc",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "972e4164771be615",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "f0cd05b2ce2feb50",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "553392c2ae74a6d1",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          }
+        ],
+        "top": [
+          {
+            "sha": "65fe196524062934",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "52c1ae931b868d9f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "972e4164771be615",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          }
+        ]
+      },
+      "What is the effective range of the rifle?": {
+        "candidates": [
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "9af88996b6a7ae72",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1100d59e8cab9ac9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "f0cd05b2ce2feb50",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          }
+        ],
+        "top": [
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          }
+        ]
+      },
+      "How should the weapon be cleaned after firing?": {
+        "candidates": [
+          {
+            "sha": "7018b04eb5b62f83",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "855029a4d9c2459b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "6b9bac2404ec43b9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "95b192347f47813f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "f0ea9e4dc9d8f6aa",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          }
+        ],
+        "top": [
+          {
+            "sha": "6b9bac2404ec43b9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "7018b04eb5b62f83",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          }
+        ]
+      },
+      "What are the steps to zero the sight?": {
+        "candidates": [
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "95b192347f47813f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "61e6b84cf9cdea01",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "84bc4d5bc0d0319a",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "972e4164771be615",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          }
+        ],
+        "top": [
+          {
+            "sha": "84bc4d5bc0d0319a",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "972e4164771be615",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          }
+        ]
+      }
+    },
+    "bm25|rerank=False|contextual=True": {
+      "How do I adjust the scope for windage?": {
+        "candidates": [
+          {
+            "sha": "65fe196524062934",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          },
+          {
+            "sha": "52c1ae931b868d9f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "b48df84e490c6abc",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "972e4164771be615",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "f0cd05b2ce2feb50",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "553392c2ae74a6d1",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          }
+        ],
+        "top": [
+          {
+            "sha": "65fe196524062934",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          },
+          {
+            "sha": "52c1ae931b868d9f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "b48df84e490c6abc",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          }
+        ]
+      },
+      "What is the effective range of the rifle?": {
+        "candidates": [
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "9af88996b6a7ae72",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1100d59e8cab9ac9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "f0cd05b2ce2feb50",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          }
+        ],
+        "top": [
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "9af88996b6a7ae72",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          }
+        ]
+      },
+      "How should the weapon be cleaned after firing?": {
+        "candidates": [
+          {
+            "sha": "7018b04eb5b62f83",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "855029a4d9c2459b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "6b9bac2404ec43b9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "95b192347f47813f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "f0ea9e4dc9d8f6aa",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          }
+        ],
+        "top": [
+          {
+            "sha": "7018b04eb5b62f83",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "855029a4d9c2459b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "6b9bac2404ec43b9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          }
+        ]
+      },
+      "What are the steps to zero the sight?": {
+        "candidates": [
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "95b192347f47813f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "61e6b84cf9cdea01",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "84bc4d5bc0d0319a",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "972e4164771be615",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          }
+        ],
+        "top": [
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "95b192347f47813f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "61e6b84cf9cdea01",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          }
+        ]
+      }
+    },
+    "bm25|rerank=True|contextual=False": {
+      "How do I adjust the scope for windage?": {
+        "candidates": [
+          {
+            "sha": "5c2b980e64b35a07",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 19
+          },
+          {
+            "sha": "bab4e401a7b0f85e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 73
+          },
+          {
+            "sha": "5e53ec824be9915e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 35
+          },
+          {
+            "sha": "930bd280a66a0805",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 54
+          },
+          {
+            "sha": "2c41bdff5403891d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 42
+          },
+          {
+            "sha": "29d29c75b25af878",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 28
+          },
+          {
+            "sha": "86ecd838cf4024b6",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 43
+          },
+          {
+            "sha": "cf98cce6e13bfee5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 11
+          },
+          {
+            "sha": "dd3075f864140a84",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 74
+          },
+          {
+            "sha": "406899d69627b5a2",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 76
+          }
+        ],
+        "top": [
+          {
+            "sha": "2c41bdff5403891d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 42
+          },
+          {
+            "sha": "5c2b980e64b35a07",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 19
+          },
+          {
+            "sha": "cf98cce6e13bfee5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 11
+          },
+          {
+            "sha": "dd3075f864140a84",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 74
+          },
+          {
+            "sha": "bab4e401a7b0f85e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 73
+          }
+        ]
+      },
+      "What is the effective range of the rifle?": {
+        "candidates": [
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "406899d69627b5a2",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 76
+          },
+          {
+            "sha": "50c8fbbefd11872c",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 29
+          },
+          {
+            "sha": "8aedd61f99fe3439",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 35
+          },
+          {
+            "sha": "2c41bdff5403891d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 42
+          },
+          {
+            "sha": "56dc44579cdb42bc",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 27
+          },
+          {
+            "sha": "a5c4dc32acdd5ddf",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 47
+          },
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "f6c02b21ff8ffc1b",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 31
+          },
+          {
+            "sha": "ce96e5f071c633a9",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 58
+          }
+        ],
+        "top": [
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "ce96e5f071c633a9",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 58
+          },
+          {
+            "sha": "406899d69627b5a2",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 76
+          },
+          {
+            "sha": "50c8fbbefd11872c",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 29
+          }
+        ]
+      },
+      "How should the weapon be cleaned after firing?": {
+        "candidates": [
+          {
+            "sha": "9a0a4e5303965be8",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 33
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "c06f5a1d2b866d8d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 65
+          },
+          {
+            "sha": "1c0d1d7aaab60e3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 79
+          },
+          {
+            "sha": "09273b8e67692fdb",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          },
+          {
+            "sha": "16fcd88ebe01360a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 53
+          },
+          {
+            "sha": "d768c93cf6f9c4b5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 5
+          },
+          {
+            "sha": "14bc66e6e397fc61",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 16
+          },
+          {
+            "sha": "b2a06427d6251743",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          },
+          {
+            "sha": "c1e98acd640fa144",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 70
+          }
+        ],
+        "top": [
+          {
+            "sha": "09273b8e67692fdb",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          },
+          {
+            "sha": "b2a06427d6251743",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "9a0a4e5303965be8",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 33
+          },
+          {
+            "sha": "14bc66e6e397fc61",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 16
+          }
+        ]
+      },
+      "What are the steps to zero the sight?": {
+        "candidates": [
+          {
+            "sha": "a5c4dc32acdd5ddf",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 47
+          },
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "9184ce103e5c0a92",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 48
+          },
+          {
+            "sha": "c99e35e7b2d87a8e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "16fcd88ebe01360a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 53
+          },
+          {
+            "sha": "cb37f9e0cfaf7b12",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 20
+          },
+          {
+            "sha": "443bc80611505051",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 19
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          }
+        ],
+        "top": [
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          },
+          {
+            "sha": "a5c4dc32acdd5ddf",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 47
+          },
+          {
+            "sha": "9184ce103e5c0a92",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 48
+          }
+        ]
+      }
+    },
+    "bm25|rerank=False|contextual=False": {
+      "How do I adjust the scope for windage?": {
+        "candidates": [
+          {
+            "sha": "5c2b980e64b35a07",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 19
+          },
+          {
+            "sha": "bab4e401a7b0f85e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 73
+          },
+          {
+            "sha": "5e53ec824be9915e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 35
+          },
+          {
+            "sha": "930bd280a66a0805",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 54
+          },
+          {
+            "sha": "2c41bdff5403891d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 42
+          },
+          {
+            "sha": "29d29c75b25af878",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 28
+          },
+          {
+            "sha": "86ecd838cf4024b6",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 43
+          },
+          {
+            "sha": "cf98cce6e13bfee5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 11
+          },
+          {
+            "sha": "dd3075f864140a84",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 74
+          },
+          {
+            "sha": "406899d69627b5a2",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 76
+          }
+        ],
+        "top": [
+          {
+            "sha": "5c2b980e64b35a07",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 19
+          },
+          {
+            "sha": "bab4e401a7b0f85e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 73
+          },
+          {
+            "sha": "5e53ec824be9915e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 35
+          },
+          {
+            "sha": "930bd280a66a0805",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 54
+          },
+          {
+            "sha": "2c41bdff5403891d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 42
+          }
+        ]
+      },
+      "What is the effective range of the rifle?": {
+        "candidates": [
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "406899d69627b5a2",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 76
+          },
+          {
+            "sha": "50c8fbbefd11872c",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 29
+          },
+          {
+            "sha": "8aedd61f99fe3439",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 35
+          },
+          {
+            "sha": "2c41bdff5403891d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 42
+          },
+          {
+            "sha": "56dc44579cdb42bc",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 27
+          },
+          {
+            "sha": "a5c4dc32acdd5ddf",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 47
+          },
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "f6c02b21ff8ffc1b",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 31
+          },
+          {
+            "sha": "ce96e5f071c633a9",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 58
+          }
+        ],
+        "top": [
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "406899d69627b5a2",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 76
+          },
+          {
+            "sha": "50c8fbbefd11872c",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 29
+          },
+          {
+            "sha": "8aedd61f99fe3439",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 35
+          },
+          {
+            "sha": "2c41bdff5403891d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 42
+          }
+        ]
+      },
+      "How should the weapon be cleaned after firing?": {
+        "candidates": [
+          {
+            "sha": "9a0a4e5303965be8",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 33
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "c06f5a1d2b866d8d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 65
+          },
+          {
+            "sha": "1c0d1d7aaab60e3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 79
+          },
+          {
+            "sha": "09273b8e67692fdb",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          },
+          {
+            "sha": "16fcd88ebe01360a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 53
+          },
+          {
+            "sha": "d768c93cf6f9c4b5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 5
+          },
+          {
+            "sha": "14bc66e6e397fc61",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 16
+          },
+          {
+            "sha": "b2a06427d6251743",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          },
+          {
+            "sha": "c1e98acd640fa144",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 70
+          }
+        ],
+        "top": [
+          {
+            "sha": "9a0a4e5303965be8",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 33
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "c06f5a1d2b866d8d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 65
+          },
+          {
+            "sha": "1c0d1d7aaab60e3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 79
+          },
+          {
+            "sha": "09273b8e67692fdb",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          }
+        ]
+      },
+      "What are the steps to zero the sight?": {
+        "candidates": [
+          {
+            "sha": "a5c4dc32acdd5ddf",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 47
+          },
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "9184ce103e5c0a92",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 48
+          },
+          {
+            "sha": "c99e35e7b2d87a8e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "16fcd88ebe01360a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 53
+          },
+          {
+            "sha": "cb37f9e0cfaf7b12",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 20
+          },
+          {
+            "sha": "443bc80611505051",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 19
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          }
+        ],
+        "top": [
+          {
+            "sha": "a5c4dc32acdd5ddf",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 47
+          },
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "9184ce103e5c0a92",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 48
+          }
+        ]
+      }
+    },
+    "hybrid|rerank=True|contextual=True": {
+      "How do I adjust the scope for windage?": {
+        "candidates": [
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "65fe196524062934",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "52c1ae931b868d9f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "b48df84e490c6abc",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "972e4164771be615",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "855029a4d9c2459b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "f0cd05b2ce2feb50",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "553392c2ae74a6d1",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "1100d59e8cab9ac9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          }
+        ],
+        "top": [
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "1100d59e8cab9ac9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "65fe196524062934",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          }
+        ]
+      },
+      "What is the effective range of the rifle?": {
+        "candidates": [
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "fb6616091be28a89",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "9af88996b6a7ae72",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "61cd06a778f630e2",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "50356b962e8fbcb9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "1100d59e8cab9ac9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "52c1ae931b868d9f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "f0cd05b2ce2feb50",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          }
+        ],
+        "top": [
+          {
+            "sha": "61cd06a778f630e2",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          }
+        ]
+      },
+      "How should the weapon be cleaned after firing?": {
+        "candidates": [
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "855029a4d9c2459b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "7018b04eb5b62f83",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f795e9b0289f8960",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 10
+          },
+          {
+            "sha": "6b9bac2404ec43b9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "95b192347f47813f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "fd7e5008eccb0d12",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 10
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "50356b962e8fbcb9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "f0ea9e4dc9d8f6aa",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          }
+        ],
+        "top": [
+          {
+            "sha": "6b9bac2404ec43b9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "50356b962e8fbcb9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          }
+        ]
+      },
+      "What are the steps to zero the sight?": {
+        "candidates": [
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "95b192347f47813f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "61e6b84cf9cdea01",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "84bc4d5bc0d0319a",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "972e4164771be615",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "6cc66c4df350cfcc",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          }
+        ],
+        "top": [
+          {
+            "sha": "84bc4d5bc0d0319a",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "972e4164771be615",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          }
+        ]
+      }
+    },
+    "hybrid|rerank=False|contextual=True": {
+      "How do I adjust the scope for windage?": {
+        "candidates": [
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "65fe196524062934",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "52c1ae931b868d9f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "b48df84e490c6abc",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "972e4164771be615",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "855029a4d9c2459b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "f0cd05b2ce2feb50",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "553392c2ae74a6d1",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "1100d59e8cab9ac9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          }
+        ],
+        "top": [
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "65fe196524062934",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          }
+        ]
+      },
+      "What is the effective range of the rifle?": {
+        "candidates": [
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "fb6616091be28a89",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "9af88996b6a7ae72",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "61cd06a778f630e2",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "50356b962e8fbcb9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "1100d59e8cab9ac9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "52c1ae931b868d9f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "f0cd05b2ce2feb50",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          }
+        ],
+        "top": [
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "a7b101d5de51287c",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          }
+        ]
+      },
+      "How should the weapon be cleaned after firing?": {
+        "candidates": [
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "855029a4d9c2459b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "7018b04eb5b62f83",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "f795e9b0289f8960",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 10
+          },
+          {
+            "sha": "6b9bac2404ec43b9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "95b192347f47813f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "8c30030526e63fac",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "fd7e5008eccb0d12",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 10
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "50356b962e8fbcb9",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "f0ea9e4dc9d8f6aa",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          }
+        ],
+        "top": [
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "855029a4d9c2459b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "7018b04eb5b62f83",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          }
+        ]
+      },
+      "What are the steps to zero the sight?": {
+        "candidates": [
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "95b192347f47813f",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "61e6b84cf9cdea01",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "f12b598288ba2d1b",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "f5782af228f53b28",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "0f9a210601b70f33",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "84bc4d5bc0d0319a",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 8
+          },
+          {
+            "sha": "1803d4c93c9aca1e",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 5
+          },
+          {
+            "sha": "47c2c73a4c158138",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "972e4164771be615",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "8d56340b905435ca",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 2
+          },
+          {
+            "sha": "d9ac2c1c28f8d358",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 6
+          },
+          {
+            "sha": "6cc66c4df350cfcc",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 4
+          }
+        ],
+        "top": [
+          {
+            "sha": "cb51a4ad6e7f41cb",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 1
+          },
+          {
+            "sha": "c2556d45527236cf",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 9
+          },
+          {
+            "sha": "bf6ae3f0d75b1046",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          },
+          {
+            "sha": "21fc1cf9c7962894",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 7
+          },
+          {
+            "sha": "1a53f8f5f29b6bc8",
+            "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+            "page": 3
+          }
+        ]
+      }
+    },
+    "hybrid|rerank=True|contextual=False": {
+      "How do I adjust the scope for windage?": {
+        "candidates": [
+          {
+            "sha": "da4788f3738c28b0",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          },
+          {
+            "sha": "5c2b980e64b35a07",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 19
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          },
+          {
+            "sha": "bab4e401a7b0f85e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 73
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "5e53ec824be9915e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 35
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "930bd280a66a0805",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 54
+          },
+          {
+            "sha": "32ab7d3b010ff11f",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 16
+          },
+          {
+            "sha": "2c41bdff5403891d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 42
+          },
+          {
+            "sha": "b3e89824df9d0fb2",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          },
+          {
+            "sha": "29d29c75b25af878",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 28
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          },
+          {
+            "sha": "86ecd838cf4024b6",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 43
+          },
+          {
+            "sha": "48b7afc686af90a5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 52
+          },
+          {
+            "sha": "cf98cce6e13bfee5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 11
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "dd3075f864140a84",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 74
+          },
+          {
+            "sha": "f1ec9cf46110830b",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          },
+          {
+            "sha": "406899d69627b5a2",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 76
+          }
+        ],
+        "top": [
+          {
+            "sha": "da4788f3738c28b0",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          },
+          {
+            "sha": "2c41bdff5403891d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 42
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "5c2b980e64b35a07",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 19
+          },
+          {
+            "sha": "cf98cce6e13bfee5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 11
+          }
+        ]
+      },
+      "What is the effective range of the rifle?": {
+        "candidates": [
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "8676f00d17e8eb31",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "406899d69627b5a2",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 76
+          },
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "50c8fbbefd11872c",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 29
+          },
+          {
+            "sha": "605bc3cbaf5736f0",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "8aedd61f99fe3439",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 35
+          },
+          {
+            "sha": "4599922937206588",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 6
+          },
+          {
+            "sha": "2c41bdff5403891d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 42
+          },
+          {
+            "sha": "cfa680149b8eb8eb",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 52
+          },
+          {
+            "sha": "56dc44579cdb42bc",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 27
+          },
+          {
+            "sha": "70185794ecced2bc",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 9
+          },
+          {
+            "sha": "a5c4dc32acdd5ddf",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 47
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "f6c02b21ff8ffc1b",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 31
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          },
+          {
+            "sha": "ce96e5f071c633a9",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 58
+          }
+        ],
+        "top": [
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "ce96e5f071c633a9",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 58
+          },
+          {
+            "sha": "406899d69627b5a2",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 76
+          }
+        ]
+      },
+      "How should the weapon be cleaned after firing?": {
+        "candidates": [
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "9a0a4e5303965be8",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 33
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "c06f5a1d2b866d8d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 65
+          },
+          {
+            "sha": "e72dd46df49961dd",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 22
+          },
+          {
+            "sha": "1c0d1d7aaab60e3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 79
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "09273b8e67692fdb",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          },
+          {
+            "sha": "578a08c3d2eac842",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 21
+          },
+          {
+            "sha": "16fcd88ebe01360a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 53
+          },
+          {
+            "sha": "8676f00d17e8eb31",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "d768c93cf6f9c4b5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 5
+          },
+          {
+            "sha": "19a2ecf5214ffe95",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 14
+          },
+          {
+            "sha": "14bc66e6e397fc61",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 16
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "b2a06427d6251743",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          },
+          {
+            "sha": "6efedd5c4765522f",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "c1e98acd640fa144",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 70
+          }
+        ],
+        "top": [
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "09273b8e67692fdb",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          },
+          {
+            "sha": "b2a06427d6251743",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "9a0a4e5303965be8",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 33
+          }
+        ]
+      },
+      "What are the steps to zero the sight?": {
+        "candidates": [
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "a5c4dc32acdd5ddf",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 47
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "eeae88a8f57b2f57",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 2
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "9184ce103e5c0a92",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 48
+          },
+          {
+            "sha": "a0fa1ff45551ce17",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 20
+          },
+          {
+            "sha": "c99e35e7b2d87a8e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          },
+          {
+            "sha": "16fcd88ebe01360a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 53
+          },
+          {
+            "sha": "e72dd46df49961dd",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 22
+          },
+          {
+            "sha": "cb37f9e0cfaf7b12",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 20
+          },
+          {
+            "sha": "4599922937206588",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 6
+          },
+          {
+            "sha": "443bc80611505051",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 19
+          },
+          {
+            "sha": "ee4e0d92384fdbbf",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 26
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          }
+        ],
+        "top": [
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "e72dd46df49961dd",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 22
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          }
+        ]
+      }
+    },
+    "hybrid|rerank=False|contextual=False": {
+      "How do I adjust the scope for windage?": {
+        "candidates": [
+          {
+            "sha": "da4788f3738c28b0",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          },
+          {
+            "sha": "5c2b980e64b35a07",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 19
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          },
+          {
+            "sha": "bab4e401a7b0f85e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 73
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "5e53ec824be9915e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 35
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "930bd280a66a0805",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 54
+          },
+          {
+            "sha": "32ab7d3b010ff11f",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 16
+          },
+          {
+            "sha": "2c41bdff5403891d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 42
+          },
+          {
+            "sha": "b3e89824df9d0fb2",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          },
+          {
+            "sha": "29d29c75b25af878",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 28
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          },
+          {
+            "sha": "86ecd838cf4024b6",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 43
+          },
+          {
+            "sha": "48b7afc686af90a5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 52
+          },
+          {
+            "sha": "cf98cce6e13bfee5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 11
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "dd3075f864140a84",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 74
+          },
+          {
+            "sha": "f1ec9cf46110830b",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          },
+          {
+            "sha": "406899d69627b5a2",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 76
+          }
+        ],
+        "top": [
+          {
+            "sha": "da4788f3738c28b0",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 11
+          },
+          {
+            "sha": "5c2b980e64b35a07",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 19
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          },
+          {
+            "sha": "bab4e401a7b0f85e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 73
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          }
+        ]
+      },
+      "What is the effective range of the rifle?": {
+        "candidates": [
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "8676f00d17e8eb31",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "406899d69627b5a2",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 76
+          },
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "50c8fbbefd11872c",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 29
+          },
+          {
+            "sha": "605bc3cbaf5736f0",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "8aedd61f99fe3439",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 35
+          },
+          {
+            "sha": "4599922937206588",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 6
+          },
+          {
+            "sha": "2c41bdff5403891d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 42
+          },
+          {
+            "sha": "cfa680149b8eb8eb",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 52
+          },
+          {
+            "sha": "56dc44579cdb42bc",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 27
+          },
+          {
+            "sha": "70185794ecced2bc",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 9
+          },
+          {
+            "sha": "a5c4dc32acdd5ddf",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 47
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "f6c02b21ff8ffc1b",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 31
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          },
+          {
+            "sha": "ce96e5f071c633a9",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 58
+          }
+        ],
+        "top": [
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "8676f00d17e8eb31",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "406899d69627b5a2",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 76
+          }
+        ]
+      },
+      "How should the weapon be cleaned after firing?": {
+        "candidates": [
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "9a0a4e5303965be8",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 33
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "c06f5a1d2b866d8d",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 65
+          },
+          {
+            "sha": "e72dd46df49961dd",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 22
+          },
+          {
+            "sha": "1c0d1d7aaab60e3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 79
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "09273b8e67692fdb",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          },
+          {
+            "sha": "578a08c3d2eac842",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 21
+          },
+          {
+            "sha": "16fcd88ebe01360a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 53
+          },
+          {
+            "sha": "8676f00d17e8eb31",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "d768c93cf6f9c4b5",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 5
+          },
+          {
+            "sha": "19a2ecf5214ffe95",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 14
+          },
+          {
+            "sha": "14bc66e6e397fc61",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 16
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "b2a06427d6251743",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 41
+          },
+          {
+            "sha": "6efedd5c4765522f",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "c1e98acd640fa144",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 70
+          }
+        ],
+        "top": [
+          {
+            "sha": "cea1fd77bcd0a4ba",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 56
+          },
+          {
+            "sha": "9a0a4e5303965be8",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 33
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          }
+        ]
+      },
+      "What are the steps to zero the sight?": {
+        "candidates": [
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "a5c4dc32acdd5ddf",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 47
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "eeae88a8f57b2f57",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 2
+          },
+          {
+            "sha": "951e61e53af27b3a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 50
+          },
+          {
+            "sha": "3b7deb549315553d",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 1
+          },
+          {
+            "sha": "4f156403bfbad1ef",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "fb0c38008cd3fdb7",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 57
+          },
+          {
+            "sha": "9184ce103e5c0a92",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 48
+          },
+          {
+            "sha": "a0fa1ff45551ce17",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 20
+          },
+          {
+            "sha": "c99e35e7b2d87a8e",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 10
+          },
+          {
+            "sha": "d3117d5e0ea623ff",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 17
+          },
+          {
+            "sha": "16fcd88ebe01360a",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 53
+          },
+          {
+            "sha": "e72dd46df49961dd",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 22
+          },
+          {
+            "sha": "cb37f9e0cfaf7b12",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 20
+          },
+          {
+            "sha": "4599922937206588",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 6
+          },
+          {
+            "sha": "443bc80611505051",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 19
+          },
+          {
+            "sha": "ee4e0d92384fdbbf",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 26
+          },
+          {
+            "sha": "54616ea6eeb0bff3",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 3
+          }
+        ],
+        "top": [
+          {
+            "sha": "27cb9f2e4d3a8e47",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "a5c4dc32acdd5ddf",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 47
+          },
+          {
+            "sha": "8836a84c2b1f04a8",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 27
+          },
+          {
+            "sha": "ada0904e7aa1cc82",
+            "source": "fy2026_budget_statement.pdf",
+            "page": 62
+          },
+          {
+            "sha": "eeae88a8f57b2f57",
+            "source": "enterprisesg-annual-report-2024-2025.pdf",
+            "page": 2
+          }
+        ]
+      }
+    }
+  },
+  "chain": {
+    "How do I adjust the scope for windage?": {
+      "candidates": [
+        {
+          "sha": "bf6ae3f0d75b1046",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "f12b598288ba2d1b",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        },
+        {
+          "sha": "47c2c73a4c158138",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "65fe196524062934",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 4
+        },
+        {
+          "sha": "21fc1cf9c7962894",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        },
+        {
+          "sha": "52c1ae931b868d9f",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        },
+        {
+          "sha": "1803d4c93c9aca1e",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 5
+        },
+        {
+          "sha": "1a53f8f5f29b6bc8",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "b48df84e490c6abc",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 5
+        },
+        {
+          "sha": "d9ac2c1c28f8d358",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 6
+        },
+        {
+          "sha": "972e4164771be615",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "855029a4d9c2459b",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 8
+        },
+        {
+          "sha": "f0cd05b2ce2feb50",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 4
+        },
+        {
+          "sha": "f5782af228f53b28",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 1
+        },
+        {
+          "sha": "a7b101d5de51287c",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "553392c2ae74a6d1",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 5
+        },
+        {
+          "sha": "1100d59e8cab9ac9",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 6
+        }
+      ],
+      "top": [
+        {
+          "sha": "d9ac2c1c28f8d358",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 6
+        },
+        {
+          "sha": "1100d59e8cab9ac9",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 6
+        },
+        {
+          "sha": "65fe196524062934",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 4
+        },
+        {
+          "sha": "bf6ae3f0d75b1046",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "f12b598288ba2d1b",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        }
+      ],
+      "chat": [
+        {
+          "sha": "d9ac2c1c28f8d358",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 6
+        },
+        {
+          "sha": "1100d59e8cab9ac9",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 6
+        },
+        {
+          "sha": "65fe196524062934",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 4
+        },
+        {
+          "sha": "bf6ae3f0d75b1046",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "f12b598288ba2d1b",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        }
+      ]
+    },
+    "What is the effective range of the rifle?": {
+      "candidates": [
+        {
+          "sha": "bf6ae3f0d75b1046",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "8c30030526e63fac",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 5
+        },
+        {
+          "sha": "a7b101d5de51287c",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "f12b598288ba2d1b",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        },
+        {
+          "sha": "21fc1cf9c7962894",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        },
+        {
+          "sha": "f5782af228f53b28",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 1
+        },
+        {
+          "sha": "fb6616091be28a89",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 6
+        },
+        {
+          "sha": "9af88996b6a7ae72",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 5
+        },
+        {
+          "sha": "1a53f8f5f29b6bc8",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "0f9a210601b70f33",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "1803d4c93c9aca1e",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 5
+        },
+        {
+          "sha": "cb51a4ad6e7f41cb",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 1
+        },
+        {
+          "sha": "61cd06a778f630e2",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 9
+        },
+        {
+          "sha": "50356b962e8fbcb9",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "1100d59e8cab9ac9",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 6
+        },
+        {
+          "sha": "52c1ae931b868d9f",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        },
+        {
+          "sha": "f0cd05b2ce2feb50",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 4
+        }
+      ],
+      "top": [
+        {
+          "sha": "61cd06a778f630e2",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 9
+        },
+        {
+          "sha": "bf6ae3f0d75b1046",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "a7b101d5de51287c",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "0f9a210601b70f33",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "f12b598288ba2d1b",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        }
+      ],
+      "chat": [
+        {
+          "sha": "61cd06a778f630e2",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 9
+        },
+        {
+          "sha": "bf6ae3f0d75b1046",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "a7b101d5de51287c",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "0f9a210601b70f33",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "f12b598288ba2d1b",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        }
+      ]
+    },
+    "How should the weapon be cleaned after firing?": {
+      "candidates": [
+        {
+          "sha": "8d56340b905435ca",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "855029a4d9c2459b",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 8
+        },
+        {
+          "sha": "21fc1cf9c7962894",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        },
+        {
+          "sha": "7018b04eb5b62f83",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 9
+        },
+        {
+          "sha": "c2556d45527236cf",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 9
+        },
+        {
+          "sha": "bf6ae3f0d75b1046",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "1a53f8f5f29b6bc8",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "f795e9b0289f8960",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 10
+        },
+        {
+          "sha": "6b9bac2404ec43b9",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "95b192347f47813f",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 8
+        },
+        {
+          "sha": "8c30030526e63fac",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 5
+        },
+        {
+          "sha": "1803d4c93c9aca1e",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 5
+        },
+        {
+          "sha": "47c2c73a4c158138",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "0f9a210601b70f33",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "fd7e5008eccb0d12",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 10
+        },
+        {
+          "sha": "d9ac2c1c28f8d358",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 6
+        },
+        {
+          "sha": "50356b962e8fbcb9",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "f0ea9e4dc9d8f6aa",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        }
+      ],
+      "top": [
+        {
+          "sha": "6b9bac2404ec43b9",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "bf6ae3f0d75b1046",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "1803d4c93c9aca1e",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 5
+        },
+        {
+          "sha": "c2556d45527236cf",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 9
+        },
+        {
+          "sha": "50356b962e8fbcb9",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        }
+      ],
+      "chat": [
+        {
+          "sha": "6b9bac2404ec43b9",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "bf6ae3f0d75b1046",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "1803d4c93c9aca1e",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 5
+        },
+        {
+          "sha": "c2556d45527236cf",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 9
+        },
+        {
+          "sha": "50356b962e8fbcb9",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        }
+      ]
+    },
+    "What are the steps to zero the sight?": {
+      "candidates": [
+        {
+          "sha": "cb51a4ad6e7f41cb",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 1
+        },
+        {
+          "sha": "c2556d45527236cf",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 9
+        },
+        {
+          "sha": "bf6ae3f0d75b1046",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "21fc1cf9c7962894",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        },
+        {
+          "sha": "1a53f8f5f29b6bc8",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "95b192347f47813f",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 8
+        },
+        {
+          "sha": "61e6b84cf9cdea01",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        },
+        {
+          "sha": "f12b598288ba2d1b",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        },
+        {
+          "sha": "f5782af228f53b28",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 1
+        },
+        {
+          "sha": "0f9a210601b70f33",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        },
+        {
+          "sha": "84bc4d5bc0d0319a",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 8
+        },
+        {
+          "sha": "1803d4c93c9aca1e",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 5
+        },
+        {
+          "sha": "47c2c73a4c158138",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "972e4164771be615",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "8d56340b905435ca",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "d9ac2c1c28f8d358",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 6
+        },
+        {
+          "sha": "6cc66c4df350cfcc",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 4
+        }
+      ],
+      "top": [
+        {
+          "sha": "84bc4d5bc0d0319a",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 8
+        },
+        {
+          "sha": "c2556d45527236cf",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 9
+        },
+        {
+          "sha": "f12b598288ba2d1b",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        },
+        {
+          "sha": "972e4164771be615",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "bf6ae3f0d75b1046",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        }
+      ],
+      "chat": [
+        {
+          "sha": "84bc4d5bc0d0319a",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 8
+        },
+        {
+          "sha": "c2556d45527236cf",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 9
+        },
+        {
+          "sha": "f12b598288ba2d1b",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 7
+        },
+        {
+          "sha": "972e4164771be615",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 2
+        },
+        {
+          "sha": "bf6ae3f0d75b1046",
+          "source": "Global_Energy_Demand_For_Different_Energy_Sources.pdf",
+          "page": 3
+        }
+      ]
+    }
+  }
+}

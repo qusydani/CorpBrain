@@ -23,22 +23,19 @@ import chromadb
 import fitz
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
-from langchain_classic.retrievers import EnsembleRetriever
-from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from sentence_transformers import CrossEncoder
 
 from ingest import DB_PATH, CHROMA_COLLECTION, IMAGE_OUT_PATH, DATA_PATH
+from retriever import BASELINE_DB_PATH, Retriever, get_embedding_model
 
 load_dotenv()
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-BASELINE_DB_PATH = "vector_db_baseline"
 EVAL_DATA_PATH   = "eval_data"
 TEST_SET_PATH    = os.path.join(EVAL_DATA_PATH, "test_set.json")
 RESULTS_PATH     = os.path.join(EVAL_DATA_PATH, "eval_results.json")
@@ -71,10 +68,6 @@ class EvalConfig:
         r = "+Rerank" if self.reranking else ""
         c = "+Ctx"    if self.contextual else "+Base"
         return f"{s}{r}{c}"
-
-    @property
-    def db_path(self) -> str:
-        return DB_PATH if self.contextual else BASELINE_DB_PATH
 
 
 # ── Overall score ─────────────────────────────────────────────────────────────
@@ -336,34 +329,6 @@ def create_baseline_collection(progress_callback=None):
 
 # ── Retriever builder ──────────────────────────────────────────────────────────
 
-def _build_retriever(strategy: str, db_path: str, embedding_model):
-    """Build a LangChain retriever (no reranking) for the given strategy and DB."""
-    vector_db = Chroma(persist_directory=db_path, embedding_function=embedding_model)
-
-    if strategy == "dense":
-        return vector_db.as_retriever(search_kwargs={"k": 10})
-
-    db_data   = vector_db.get()
-    bm25_docs = [
-        Document(page_content=txt, metadata=meta)
-        for txt, meta in zip(db_data["documents"], db_data["metadatas"])
-    ]
-
-    if strategy == "bm25":
-        ret   = BM25Retriever.from_documents(bm25_docs)
-        ret.k = 10
-        return ret
-
-    # hybrid
-    vector_ret    = vector_db.as_retriever(search_kwargs={"k": 10})
-    bm25_ret      = BM25Retriever.from_documents(bm25_docs)
-    bm25_ret.k    = 10
-    return EnsembleRetriever(
-        retrievers=[vector_ret, bm25_ret],
-        weights=[0.5, 0.5],
-    )
-
-
 # ── RAGAS scoring ──────────────────────────────────────────────────────────────
 
 def _run_ragas(samples: list, ragas_llm, ragas_emb) -> tuple:
@@ -451,18 +416,18 @@ def _make_sub_progress(config_idx: int, total_configs: int, parent_cb):
 def run_config(
     test_set:   list,
     config:     EvalConfig,
-    reranker:   CrossEncoder,
     llm:        ChatGoogleGenerativeAI,
     ragas_llm,
     ragas_emb,
-    embedding_model,
     progress_callback=None,
 ) -> dict:
     """
     Evaluate one EvalConfig.
     Returns {"aggregate": {metric: score}, "per_question": [{"question", metric...}]}
     """
-    retriever = _build_retriever(config.strategy, config.db_path, embedding_model)
+    retriever = Retriever(
+        strategy=config.strategy, rerank=config.reranking, contextual=config.contextual,
+    )
     samples   = []
 
     for i, item in enumerate(test_set):
@@ -475,18 +440,8 @@ def run_config(
                 (i + 0.5) / len(test_set),
             )
 
-        # Retrieve candidates
-        candidates = retriever.invoke(question)
-
-        # Optionally rerank
-        if config.reranking and reranker:
-            pairs  = [(question, doc.page_content) for doc in candidates]
-            scores = reranker.predict(pairs)
-            ranked = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)
-            docs   = [doc for _, doc in ranked[:5]]
-        else:
-            docs = candidates[:5]
-
+        # Retrieve top 5 (reranked, or first 5 candidates when reranking is off)
+        docs     = retriever.retrieve(question)
         contexts = [doc.page_content for doc in docs]
 
         # Generate answer (text-only for reproducibility across configs)
@@ -560,11 +515,10 @@ def run_full_evaluation(
     # "1 generation instead of 3" Answer Relevancy issue that Gemini Flash had)
     # and is ~3.75× cheaper than Sonnet ($0.80/$4 vs $3/$15 per MTok in/out).
     # Full 25q × 12 config run costs ~$8 with Haiku vs ~$36 with Sonnet.
-    embedding_model = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+    # Retrieval components (embeddings, reranker) are shared via retriever.py.
     llm             = ChatGoogleGenerativeAI(model=EVAL_LLM_ID, temperature=0)
-    reranker        = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
     ragas_llm       = LangchainLLMWrapper(ChatAnthropic(model="claude-haiku-4-5-20251001", temperature=0))
-    ragas_emb       = LangchainEmbeddingsWrapper(embedding_model)
+    ragas_emb       = LangchainEmbeddingsWrapper(get_embedding_model())
 
     total = len(configs)
     for i, config in enumerate(pending):
@@ -576,7 +530,7 @@ def run_full_evaluation(
             )
 
         config_result = run_config(
-            test_set, config, reranker, llm, ragas_llm, ragas_emb, embedding_model,
+            test_set, config, llm, ragas_llm, ragas_emb,
             progress_callback=_make_sub_progress(overall_idx, total, progress_callback),
         )
         results.append({

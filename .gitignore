@@ -15,3 +15,4 @@ vector_db/
 data/
 extracted_images/
 *.json
+!tests/fixtures/*.json

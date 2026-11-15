@@ -3,50 +3,25 @@ import base64
 import io
 from PIL import Image
 from dotenv import load_dotenv
-from langchain_chroma import Chroma
 from langchain_anthropic import ChatAnthropic
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_community.retrievers import BM25Retriever
-from langchain_classic.retrievers import EnsembleRetriever
 from langchain_core.messages import HumanMessage
-from langchain_core.documents import Document
-from sentence_transformers import CrossEncoder
+
+from retriever import Retriever, get_embedding_model, get_reranker
 
 load_dotenv()
 
-DB_PATH = "vector_db"
 MEMORY_TURNS = 3   # Number of prior conversation turns to include
-RERANK_TOP_N = 5   # Docs to keep after reranking and pass to Claude
 
 
 class MultimodalRAGChain:
     def __init__(self):
-        # 1. Setup Retrievers
-        self.embedding_model = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
-        vector_db = Chroma(persist_directory=DB_PATH, embedding_function=self.embedding_model)
-        vector_retriever = vector_db.as_retriever(search_kwargs={"k": 10})
-
+        # 1. Hybrid retrieval + cross-encoder reranking on the contextual DB
         print("Building Keyword Index...")
-        db_data = vector_db.get()
-        docs_for_bm25 = [
-            Document(page_content=txt, metadata=meta)
-            for txt, meta in zip(db_data["documents"], db_data["metadatas"])
-        ]
+        self.retriever = Retriever(strategy="hybrid", rerank=True, contextual=True)
 
-        if docs_for_bm25:
-            bm25_retriever = BM25Retriever.from_documents(docs_for_bm25)
-            bm25_retriever.k = 10
-            self.retriever = EnsembleRetriever(
-                retrievers=[vector_retriever, bm25_retriever],
-                weights=[0.5, 0.5],
-            )
-        else:
-            print("No documents in DB yet — using vector retriever only.")
-            self.retriever = vector_retriever
-
-        # 2. Setup Reranker (local, no API cost)
+        # 2. Load the reranker now rather than on the first query
         print("Loading reranker...")
-        self.reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+        get_reranker()
 
         # 3. Setup Vision-Capable LLM
         self.llm = ChatAnthropic(model="claude-sonnet-4-6", temperature=0)
@@ -109,34 +84,21 @@ class MultimodalRAGChain:
 
         return HumanMessage(content=message_content)
 
-    def _rerank(self, query: str, docs: list) -> list:
-        """
-        Score every (query, doc) pair jointly with the cross-encoder.
-        Returns the top RERANK_TOP_N docs sorted by relevance score.
-        """
-        pairs = [(query, doc.page_content) for doc in docs]
-        scores = self.reranker.predict(pairs)
-        ranked = sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
-        return [doc for _, doc in ranked[:RERANK_TOP_N]]
-
     def embed_query(self, query: str) -> list:
         """Embed a query string into a vector using the same model as the DB."""
-        return self.embedding_model.embed_query(query)
+        return get_embedding_model().embed_query(query)
 
     def retrieve_with_stages(self, user_query: str) -> tuple:
         """
         Returns (candidates, reranked) separately for visualization.
-        candidates — all 20 hybrid retrieval results
+        candidates — all hybrid retrieval results (up to 20)
         reranked   — top 5 after cross-encoder reranking
         """
-        candidates = self.retriever.invoke(user_query)
-        reranked = self._rerank(user_query, candidates)
-        return candidates, reranked
+        return self.retriever.retrieve_with_stages(user_query)
 
     def retrieve(self, user_query):
-        """Stage 1: hybrid retrieval. Stage 2: cross-encoder reranking."""
-        candidates = self.retriever.invoke(user_query)  # 20 candidates
-        return self._rerank(user_query, candidates)      # top 5
+        """Stage 1: hybrid retrieval. Stage 2: cross-encoder reranking (top 5)."""
+        return self.retriever.retrieve(user_query)
 
     def stream(self, query_dict):
         """
