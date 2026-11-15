@@ -128,3 +128,30 @@ streamlit run app.py
 ```
 
 Upload PDFs via the sidebar, click **Ingest Documents**, then ask questions in the **Chat** tab. Use **Explore** to visualize your knowledge base in 3D, and **Eval** to benchmark retrieval configurations.
+
+### 5. MCP Server (optional)
+
+`mcp_server.py` exposes the knowledge base to any MCP client over stdio:
+
+| Tool | What it returns |
+|---|---|
+| `search_documents(query, strategy, rerank, k, sources)` | Top `k` chunks (best first) with `source`, `page`, `type` (`text` / `image_summary`) and `content`. `sources` restricts the search to specific files. |
+| `list_documents()` | Every ingested file with its page count. |
+
+Try it with the MCP Inspector:
+```bash
+npx @modelcontextprotocol/inspector .venv/Scripts/python mcp_server.py
+```
+
+**Claude Desktop:** add this to `claude_desktop_config.json` (Settings → Developer → Edit Config), using absolute paths, then restart Claude Desktop:
+```json
+{
+  "mcpServers": {
+    "corpbrain": {
+      "command": "C:\path\to\CorpBrain\.venv\Scripts\python.exe",
+      "args": ["C:\path\to\CorpBrain\mcp_server.py"]
+    }
+  }
+}
+```
+On macOS/Linux use `.venv/bin/python`. The server reads `GOOGLE_API_KEY` from the repo's `.env`, so nothing else needs configuring.
