@@ -34,10 +34,28 @@ CorpBrain is a **production-grade Multimodal Retrieval-Augmented Generation (RAG
 - **Streaming Responses** — Answers stream token-by-token via LangChain's streaming interface.
 
 ### Agent Mode
-- **RAG / Agent toggle** in Chat. Agent mode runs a LangGraph tool-calling loop on **Gemini 2.5 Flash** that decides which tools to call, and how often, before answering.
+- **RAG / Agent toggle** in Chat. Agent mode runs a LangGraph agent on **Gemini 2.5 Flash** that decides which tools to call, and how often, before answering.
+- **Router and planner** — a router call classifies each question. Simple ones go straight to the tool-calling loop. Complex ones (comparisons, multi-part, cross-document) get a structured plan of up to 4 sub-questions, whose searches run in parallel. A grader then marks any thin results, those sub-questions are searched once more with a rewritten query, and a synthesizer writes one cited answer. The plan appears in Chat before the answer streams.
+
+```mermaid
+flowchart LR
+    S([question]) --> R[router]
+    R -- simple --> M[model]
+    M <--> T[tools]
+    M --> E([answer])
+    R -- complex --> P[planner]
+    P -- no plan --> M
+    P --> Q1[search 1] & Q2[search 2] & Qn[search N]
+    Q1 & Q2 & Qn --> G[grade]
+    G -- thin --> RS[re-search]
+    RS --> SY[synthesize]
+    G -- ok --> SY
+    SY --> E
+```
+
 - **Tools over MCP** — the agent reaches retrieval only through `mcp_server.py` over stdio MCP, the same server any MCP client can use.
 - **Live tool calls** — each call and its result appear as they happen; the answer streams with inline `[source p.N]` citations, a list of the cited pages, and token usage and cost.
-- **Hard caps** — at most 6 tool-enabled model calls and 8 tool calls, then one final call without tools so it still answers. Tool errors go back to the model instead of crashing the run.
+- **Hard caps** — at most 6 tool-enabled model calls in the loop and 8 tool calls overall. When the loop hits a cap it makes one final call without tools so it still answers, and planned searches beyond the budget are skipped. Tool errors go back to the model instead of crashing the run.
 
 ### Explore (3D Vector Space Visualizer)
 - UMAP reduces all chunk embeddings to 3D; Plotly renders an interactive scatter plot colored by source document.

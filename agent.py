@@ -3,20 +3,39 @@ agent.py — a tool-calling agent over CorpBrain's MCP server.
 
     python agent.py "What does the handbook say about PPE?"
 
-A small LangGraph loop on Gemini Flash: the model either calls tools or answers.
-Tools come from mcp_server.py over stdio MCP, never by importing retrieval.
+A LangGraph agent on Gemini Flash. Tools come from mcp_server.py over stdio
+MCP, never by importing retrieval.
 
     run_agent(question, history, toolbox=...)   async stream of events
     AgentRunner().ask(question, history)        the same stream, synchronously,
                                                 over one long-lived MCP session
 
-Events, in order: ToolCall / ToolResult pairs as tools run, Token chunks of the
-answer, then one Final with the answer, cited sources and token usage. The UI
-and the eval both consume this stream.
+Graph:
 
-Caps: at most MAX_ITERATIONS tool-enabled model calls and MAX_TOOL_CALLS tool
-executions. Hitting either triggers one last model call without tools, so the
-agent still answers from what it has; Final.stop_reason records which cap hit.
+    START → router ─simple──→ model ⇄ tools ─────────────────────────────→ END
+                  └complex─→ planner ─→ search ×N ─→ grade ─ok───→ synthesize → END
+                                (parallel)   └thin──→ research ×M ─┘
+                               (no plan) ──→ model
+
+    router      one structured Flash call: is this simple or complex?
+    model/tools the tool-calling loop; the model searches until it can answer
+    planner     lists documents, then splits the question into ≤ MAX_SUB_QUESTIONS
+                sub-questions, each with a search query (and optional file filter)
+    search      one search_documents call per sub-question, all in parallel
+    grade       one structured call marks each sub-question's results ok or thin
+    research    one retry per thin sub-question: a rewritten query, no file filter
+    synthesize  one call without tools writes the cited answer from all findings
+
+Events, in order: one Plan once the route (and for complex questions the
+sub-questions) is known, ToolCall / ToolResult pairs as tools run, Token
+chunks of the answer, then one Final with the answer, cited sources and token
+usage. The UI and the eval both consume this stream.
+
+Caps: at most MAX_ITERATIONS tool-enabled model calls in the loop and
+MAX_TOOL_CALLS tool executions overall. In the loop, hitting either triggers
+one last model call without tools, so the agent still answers from what it
+has; Final.stop_reason records which cap hit. On the complex path, searches
+beyond the tool budget are not run.
 """
 import asyncio
 import json
@@ -28,7 +47,7 @@ import sys
 import threading
 from contextlib import AsyncExitStack
 from dataclasses import dataclass, field
-from typing import Annotated, Any, AsyncIterator, Iterator, TypedDict
+from typing import Annotated, Any, AsyncIterator, Iterator, Literal, TypedDict
 
 from dotenv import load_dotenv
 from langchain_core.messages import (
@@ -37,8 +56,10 @@ from langchain_core.messages import (
 from langgraph.config import get_stream_writer
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
+from langgraph.types import Send
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
+from pydantic import BaseModel, Field
 
 from pricing import FLASH_MODEL_ID, cost, usage
 
@@ -49,23 +70,88 @@ SERVER_SCRIPT = os.path.join(ROOT, "mcp_server.py")
 MAX_ITERATIONS = 6
 MAX_TOOL_CALLS = 8
 HISTORY_TURNS = 3   # Prior user/assistant turns passed to the model
+MAX_SUB_QUESTIONS = 4
+GRADE_SNIPPET_CHARS = 500   # Per chunk, in the grader's view of the results
+
+CITATION_RULES = (
+    "Cite every factual claim inline as [<source> p.<page>] using the source and page "
+    "fields of the search results, e.g. [handbook.pdf p.12]; separate several with "
+    "semicolons, e.g. [a.pdf p.3; b.pdf p.7]. If the documents don't contain the answer, say so."
+)
 
 SYSTEM_PROMPT = (
     "You answer questions about the user's PDF knowledge base using the tools. "
     "Always search before answering; never answer from general knowledge. "
     "Call list_documents when you need exact file names, e.g. to restrict search_documents "
     "with `sources`. If the question has several parts, search for each part.\n\n"
-    "Cite every factual claim inline as [<source> p.<page>] using the source and page "
-    "fields of the search results, e.g. [handbook.pdf p.12]; separate several with "
-    "semicolons, e.g. [a.pdf p.3; b.pdf p.7]. If the documents don't contain the answer, say so."
+    + CITATION_RULES
 )
 FORCE_ANSWER_PROMPT = (
     "Tool budget exhausted. Answer now using only the search results above, with "
     "citations. If they are not enough, say what is missing."
 )
+ROUTER_PROMPT = (
+    "Classify the user's latest question about their PDF knowledge base.\n"
+    "simple: one fact or one topic, answerable with one or two searches.\n"
+    "complex: needs several separate lookups combined — comparisons, several entities, "
+    "documents or time periods, multi-part questions, or reasoning across sources.\n"
+    "Use the conversation to resolve follow-ups. Give a one-sentence reason."
+)
+PLANNER_PROMPT = (
+    "Split the user's latest question into at most {n} self-contained sub-questions "
+    "that together answer it. Each needs its own search: give a concise keyword-rich "
+    "search query, and set `sources` to exact file names only when the sub-question "
+    "clearly targets specific documents (otherwise leave it empty).\n\n"
+    "Available documents:\n{documents}"
+)
+GRADER_PROMPT = (
+    "For each sub-question, decide whether its search results contain the information "
+    "needed to answer it. Mark sufficient=false when the results are missing, off-topic "
+    "or errored, and then give new_query: a differently worded search query more likely "
+    "to find it. Return one verdict per sub-question id."
+)
+SYNTH_PROMPT = (
+    "Answer the user's question using only the research findings below, which are "
+    "search results for sub-questions of it. Combine them into one coherent answer; "
+    "don't answer from general knowledge.\n\n" + CITATION_RULES
+)
+
+
+# ── Structured outputs ────────────────────────────────────────────────────────
+
+class Route(BaseModel):
+    complexity: Literal["simple", "complex"]
+    reason: str = ""
+
+
+class SubQuestion(BaseModel):
+    question: str = Field(description="A self-contained sub-question.")
+    query: str = Field(description="Search query for it.")
+    sources: list[str] | None = Field(default=None, description="Exact file names to restrict to, or empty.")
+
+
+class SearchPlan(BaseModel):
+    sub_questions: list[SubQuestion]
+
+
+class Verdict(BaseModel):
+    id: int
+    sufficient: bool
+    new_query: str | None = None
+
+
+class Coverage(BaseModel):
+    verdicts: list[Verdict]
 
 
 # ── Events ────────────────────────────────────────────────────────────────────
+
+@dataclass
+class Plan:
+    complexity: str       # "simple" | "complex"
+    reason: str
+    sub_questions: list = field(default_factory=list)   # [{"id", "question", "query", "sources"}]
+
 
 @dataclass
 class ToolCall:
@@ -92,13 +178,15 @@ class Final:
     answer: str
     sources: list         # [{"source", "page"}], cited ones in citation order
     usage: dict           # {"input_tokens", "output_tokens", "usd"}
-    iterations: int       # Model calls, including a forced final one
+    iterations: int       # Every model call: router, planner, grader, loop, synthesizer
     tool_calls: int       # Tool executions (skipped-over-cap calls excluded)
     stop_reason: str      # "answered" | "iteration_limit" | "tool_call_limit"
     retrieved: list = field(default_factory=list)   # Every chunk search_documents returned
+    route: str = "simple"                           # Path taken: "simple" | "complex"
+    plan: Plan | None = None
 
 
-Event = ToolCall | ToolResult | Token | Final
+Event = Plan | ToolCall | ToolResult | Token | Final
 
 
 # ── MCP toolbox ───────────────────────────────────────────────────────────────
@@ -178,13 +266,19 @@ def match_sources(answer: str, chunks: list[dict]) -> list[dict]:
 # ── Graph ─────────────────────────────────────────────────────────────────────
 
 class AgentState(TypedDict):
+    # Counters are summed deltas, since parallel search nodes update them at once.
     messages: Annotated[list[AnyMessage], add_messages]
-    iterations: int
-    tool_calls: int
+    iterations: Annotated[int, operator.add]      # Every model call
+    loop_calls: Annotated[int, operator.add]      # Model calls in the tool loop (the iteration cap)
+    tool_calls: Annotated[int, operator.add]
     stop_reason: str
-    input_tokens: int
-    output_tokens: int
+    input_tokens: Annotated[int, operator.add]
+    output_tokens: Annotated[int, operator.add]
     retrieved: Annotated[list[dict], operator.add]
+    route: str
+    plan: Plan | None
+    findings: Annotated[list[dict], operator.add]  # {"id", "question", "query", "attempt", "results", "error"}
+    retries: list[dict]                            # Sub-questions to search again, with new queries
 
 
 def _text(content) -> str:
@@ -200,14 +294,151 @@ def _text(content) -> str:
     )
 
 
+def _conversation(state: AgentState) -> list[AnyMessage]:
+    """History and the question, without the loop's system prompt."""
+    return [m for m in state["messages"] if not isinstance(m, SystemMessage)]
+
+
+def _format_results(results: list[dict], snippet: int | None = None) -> str:
+    lines = []
+    for r in results:
+        text = r["content"] if snippet is None else r["content"][:snippet]
+        lines.append(f"[{r['source']} p.{r['page']}] ({r['type']}) {text}")
+    return "\n".join(lines) or "(no results)"
+
+
+def _merged_findings(findings: list[dict]) -> list[dict]:
+    """One entry per sub-question: every attempt's results, deduplicated."""
+    by_id: dict[int, dict] = {}
+    for f in sorted(findings, key=lambda f: (f["id"], f["attempt"])):
+        entry = by_id.setdefault(f["id"], {"id": f["id"], "question": f["question"],
+                                           "results": [], "errors": []})
+        seen = {(r["source"], r["page"], r["content"]) for r in entry["results"]}
+        entry["results"] += [r for r in f["results"] if (r["source"], r["page"], r["content"]) not in seen]
+        if f["error"]:
+            entry["errors"].append(f["error"])
+    return list(by_id.values())
+
+
 def build_graph(llm, toolbox: MCPToolbox, max_iterations: int, max_tool_calls: int):
     llm_with_tools = llm.bind_tools(toolbox.specs)
+
+    async def structured(schema, messages) -> tuple[Any, dict]:
+        """One structured-output call: (parsed or None, counter updates)."""
+        out = await llm.with_structured_output(schema, include_raw=True).ainvoke(messages)
+        in_tok, out_tok = usage(out.get("raw"))
+        return out.get("parsed"), {"iterations": 1, "input_tokens": in_tok, "output_tokens": out_tok}
+
+    # ── Router ──
+
+    async def router(state: AgentState) -> dict:
+        parsed, counts = await structured(Route, [SystemMessage(ROUTER_PROMPT), *_conversation(state)])
+        route = parsed.complexity if parsed else "simple"
+        update = {**counts, "route": route}
+        if route == "simple":
+            plan = Plan("simple", parsed.reason if parsed else "")
+            get_stream_writer()(plan)
+            update["plan"] = plan
+        return update
+
+    def after_router(state: AgentState) -> str:
+        return "planner" if state["route"] == "complex" else "model"
+
+    # ── Complex path ──
+
+    async def planner(state: AgentState) -> dict:
+        write = get_stream_writer()
+        write(ToolCall("plan-docs", "list_documents", {}))
+        text, is_error, _ = await toolbox.call("list_documents", {})
+        write(ToolResult("plan-docs", "list_documents", text, is_error))
+
+        prompt = PLANNER_PROMPT.format(n=MAX_SUB_QUESTIONS, documents=text)
+        parsed, counts = await structured(SearchPlan, [SystemMessage(prompt), *_conversation(state)])
+        budget = max(0, max_tool_calls - 1)   # list_documents used one
+        subs = (parsed.sub_questions if parsed else [])[:min(MAX_SUB_QUESTIONS, budget)]
+        update = {**counts, "tool_calls": 1}
+        if not subs:   # No usable plan: fall back to the tool loop
+            plan = Plan("simple", "Planner returned no sub-questions; searching directly.")
+            update["route"] = "simple"
+        else:
+            plan = Plan("complex", "", [
+                {"id": i, "question": s.question, "query": s.query, "sources": s.sources or None}
+                for i, s in enumerate(subs, start=1)
+            ])
+        write(plan)
+        update["plan"] = plan
+        return update
+
+    def after_planner(state: AgentState):
+        if state["route"] != "complex":
+            return "model"
+        return [Send("search", {"sub": s, "attempt": 1}) for s in state["plan"].sub_questions]
+
+    async def search(task: dict) -> dict:
+        """One sub-question's search. Runs as a Send task, so it sees only `task`."""
+        write = get_stream_writer()
+        sub, attempt = task["sub"], task["attempt"]
+        args = {"query": sub["query"]}
+        if sub.get("sources"):
+            args["sources"] = sub["sources"]
+        call_id = f"sub{sub['id']}-try{attempt}"
+        write(ToolCall(call_id, "search_documents", args))
+        text, is_error, payload = await toolbox.call("search_documents", args)
+        write(ToolResult(call_id, "search_documents", text, is_error))
+        results = payload if isinstance(payload, list) else []
+        return {
+            "tool_calls": 1,
+            "retrieved": results,
+            "findings": [{"id": sub["id"], "question": sub["question"], "query": sub["query"],
+                          "attempt": attempt, "results": results, "error": text if is_error else None}],
+        }
+
+    async def grade(state: AgentState) -> dict:
+        blocks = []
+        for f in _merged_findings(state["findings"]):
+            errors = "".join(f"\nSearch error: {e}" for e in f["errors"])
+            blocks.append(f"## Sub-question {f['id']}: {f['question']}{errors}\n"
+                          f"{_format_results(f['results'], GRADE_SNIPPET_CHARS)}")
+        parsed, counts = await structured(Coverage, [SystemMessage(GRADER_PROMPT), HumanMessage("\n\n".join(blocks))])
+        thin = {v.id: v.new_query for v in (parsed.verdicts if parsed else [])
+                if not v.sufficient and v.new_query}
+        # Retry with the new query and no file filter, since a too-narrow filter is a common cause.
+        retries = [{**s, "query": thin[s["id"]], "sources": None}
+                   for s in state["plan"].sub_questions if s["id"] in thin]
+        return {**counts, "retries": retries[:max(0, max_tool_calls - state["tool_calls"])]}
+
+    def after_grade(state: AgentState):
+        if not state["retries"]:
+            return "synthesize"
+        return [Send("research", {"sub": s, "attempt": 2}) for s in state["retries"]]
+
+    async def synthesize(state: AgentState) -> dict:
+        write = get_stream_writer()
+        blocks = [f"## Sub-question {f['id']}: {f['question']}\n{_format_results(f['results'])}"
+                  for f in _merged_findings(state["findings"])]
+        conversation = _conversation(state)
+        question = conversation[-1].content
+        messages = [SystemMessage(SYNTH_PROMPT), *conversation[:-1],
+                    HumanMessage(f"Question: {question}\n\nResearch findings:\n\n" + "\n\n".join(blocks))]
+        full = None
+        async for chunk in llm.astream(messages):
+            if text := _text(chunk.content):
+                write(Token(text))
+            full = chunk if full is None else full + chunk
+        msg = message_chunk_to_message(full) if full is not None else AIMessage("")
+        if msg.tool_calls:
+            msg = AIMessage(content=msg.content, usage_metadata=msg.usage_metadata)
+        in_tok, out_tok = usage(msg)
+        return {"messages": [msg], "iterations": 1, "stop_reason": "answered",
+                "input_tokens": in_tok, "output_tokens": out_tok}
+
+    # ── Tool loop (simple path) ──
 
     async def model(state: AgentState) -> dict:
         write = get_stream_writer()
         if state["tool_calls"] >= max_tool_calls:
             stop = "tool_call_limit"
-        elif state["iterations"] >= max_iterations:
+        elif state["loop_calls"] >= max_iterations:
             stop = "iteration_limit"
         else:
             stop = "answered"
@@ -229,15 +460,16 @@ def build_graph(llm, toolbox: MCPToolbox, max_iterations: int, max_tool_calls: i
         in_tok, out_tok = usage(msg)
         return {
             "messages": [msg],
-            "iterations": state["iterations"] + 1,
+            "iterations": 1,
+            "loop_calls": 1,
             "stop_reason": stop,
-            "input_tokens": state["input_tokens"] + in_tok,
-            "output_tokens": state["output_tokens"] + out_tok,
+            "input_tokens": in_tok,
+            "output_tokens": out_tok,
         }
 
     async def tools(state: AgentState) -> dict:
         write = get_stream_writer()
-        used = state["tool_calls"]
+        start = used = state["tool_calls"]
         out, retrieved = [], []
         for tc in state["messages"][-1].tool_calls:
             write(ToolCall(tc["id"], tc["name"], tc["args"]))
@@ -251,17 +483,29 @@ def build_graph(llm, toolbox: MCPToolbox, max_iterations: int, max_tool_calls: i
                 retrieved += payload
             out.append(ToolMessage(text, tool_call_id=tc["id"], name=tc["name"],
                                    status="error" if is_error else "success"))
-        return {"messages": out, "tool_calls": used, "retrieved": retrieved}
+        return {"messages": out, "tool_calls": used - start, "retrieved": retrieved}
 
-    def route(state: AgentState) -> str:
+    def after_model(state: AgentState) -> str:
         last = state["messages"][-1]
         return "tools" if state["stop_reason"] == "answered" and last.tool_calls else END
 
     g = StateGraph(AgentState)
+    g.add_node("router", router)
+    g.add_node("planner", planner)
+    g.add_node("search", search)
+    g.add_node("grade", grade)
+    g.add_node("research", search)
+    g.add_node("synthesize", synthesize)
     g.add_node("model", model)
     g.add_node("tools", tools)
-    g.add_edge(START, "model")
-    g.add_conditional_edges("model", route, ["tools", END])
+    g.add_edge(START, "router")
+    g.add_conditional_edges("router", after_router, ["planner", "model"])
+    g.add_conditional_edges("planner", after_planner, ["search", "model"])
+    g.add_edge("search", "grade")
+    g.add_conditional_edges("grade", after_grade, ["research", "synthesize"])
+    g.add_edge("research", "synthesize")
+    g.add_edge("synthesize", END)
+    g.add_conditional_edges("model", after_model, ["tools", END])
     g.add_edge("tools", "model")
     return g.compile()
 
@@ -288,15 +532,17 @@ async def run_agent(
     max_iterations: int = MAX_ITERATIONS,
     max_tool_calls: int = MAX_TOOL_CALLS,
 ) -> AsyncIterator[Event]:
-    """Answer one question, yielding ToolCall/ToolResult/Token events then a Final."""
+    """Answer one question, yielding Plan, ToolCall/ToolResult, Token events, then a Final."""
     graph = build_graph(llm or default_llm(), toolbox, max_iterations, max_tool_calls)
     state = {
         "messages": [SystemMessage(SYSTEM_PROMPT), *_history_messages(history), HumanMessage(question)],
-        "iterations": 0, "tool_calls": 0, "stop_reason": "answered",
+        "iterations": 0, "loop_calls": 0, "tool_calls": 0, "stop_reason": "answered",
         "input_tokens": 0, "output_tokens": 0, "retrieved": [],
+        "route": "simple", "plan": None, "findings": [], "retries": [],
     }
-    # Each model call (at most max_iterations + 1) and tool step is one superstep.
-    config = {"recursion_limit": 2 * max_iterations + 4}
+    # Supersteps: router, planner, then the loop's model calls (at most
+    # max_iterations + 1) and tool steps; the complex path needs only six.
+    config = {"recursion_limit": 2 * max_iterations + 6}
 
     final_state = state
     async for mode, data in graph.astream(state, config, stream_mode=["custom", "values"]):
@@ -315,6 +561,8 @@ async def run_agent(
         tool_calls=final_state["tool_calls"],
         stop_reason=final_state["stop_reason"],
         retrieved=final_state["retrieved"],
+        route=final_state["route"],
+        plan=final_state["plan"],
     )
 
 
@@ -391,7 +639,11 @@ class AgentRunner:
 async def _cli(question: str):
     async with MCPToolbox() as tb:
         async for ev in run_agent(question, toolbox=tb):
-            if isinstance(ev, ToolCall):
+            if isinstance(ev, Plan):
+                print(f"[{ev.complexity}] {ev.reason}", file=sys.stderr)
+                for s in ev.sub_questions:
+                    print(f"  {s['id']}. {s['question']}  (search: {s['query']!r})", file=sys.stderr)
+            elif isinstance(ev, ToolCall):
                 print(f"\n→ {ev.name}({json.dumps(ev.args)})", file=sys.stderr)
             elif isinstance(ev, ToolResult):
                 tag = "ERROR" if ev.is_error else "ok"
@@ -404,7 +656,7 @@ async def _cli(question: str):
                 for s in ev.sources:
                     print(f"  - {s['source']} p.{s['page']}")
                 u = ev.usage
-                print(f"\n{ev.iterations} model calls · {ev.tool_calls} tool calls · "
+                print(f"\n{ev.route} route · {ev.iterations} model calls · {ev.tool_calls} tool calls · "
                       f"{u['input_tokens']} in / {u['output_tokens']} out tokens · "
                       f"${u['usd']:.4f} · stop: {ev.stop_reason}", file=sys.stderr)
 

@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 import plotly.colors as pc
 from umap import UMAP
 from rag import get_hybrid_chain
-from agent import AgentRunner, Final, Token, ToolCall, ToolResult
+from agent import AgentRunner, Final, Plan, Token, ToolCall, ToolResult
 from ingest import (
     DB_PATH,
     CHROMA_COLLECTION,
@@ -226,7 +226,17 @@ def render_agent_answer(prompt: str, chat_history: list) -> str:
 
     try:
         for ev in get_agent_runner().ask(prompt, chat_history):
-            if isinstance(ev, ToolCall):
+            if isinstance(ev, Plan):
+                if ev.sub_questions:
+                    status.update(label=f"Researching {len(ev.sub_questions)} sub-questions...")
+                    status.markdown("**Plan**\n" + "\n".join(
+                        f"{s['id']}. {s['question']}  \n   _search:_ `{s['query']}`"
+                        + (f" _in_ {', '.join(s['sources'])}" if s.get("sources") else "")
+                        for s in ev.sub_questions
+                    ))
+                else:
+                    status.caption(f"Simple question: searching directly. {ev.reason}")
+            elif isinstance(ev, ToolCall):
                 streamed = ""          # Text before a tool call is thinking aloud, not the answer
                 answer_box.empty()
                 args = ", ".join(f"{k}={v!r}" for k, v in ev.args.items())
@@ -250,8 +260,10 @@ def render_agent_answer(prompt: str, chat_history: list) -> str:
 
     answer_box.markdown(final.answer)
     limit_note = "" if final.stop_reason == "answered" else f" (stopped: {final.stop_reason.replace('_', ' ')})"
+    route_note = (f"planned {len(final.plan.sub_questions)} sub-questions, "
+                  if final.route == "complex" else "")
     status.update(
-        label=f"Agent used {final.tool_calls} tool call{'s' * (final.tool_calls != 1)}{limit_note}",
+        label=f"Agent {route_note}used {final.tool_calls} tool call{'s' * (final.tool_calls != 1)}{limit_note}",
         state="complete" if final.stop_reason == "answered" else "error",
         expanded=False,
     )
