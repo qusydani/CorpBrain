@@ -33,6 +33,12 @@ CorpBrain is a **production-grade Multimodal Retrieval-Augmented Generation (RAG
 - **Multimodal Context Injection** — Retrieved image-summary chunks trigger automatic base64 encoding of the original PNG diagram, injecting it directly into **Claude Sonnet**'s context window alongside the text.
 - **Streaming Responses** — Answers stream token-by-token via LangChain's streaming interface.
 
+### Agent Mode
+- **RAG / Agent toggle** in Chat. Agent mode runs a LangGraph tool-calling loop on **Gemini 2.5 Flash** that decides which tools to call, and how often, before answering.
+- **Tools over MCP** — the agent reaches retrieval only through `mcp_server.py` over stdio MCP, the same server any MCP client can use.
+- **Live tool calls** — each call and its result appear as they happen; the answer streams with inline `[source p.N]` citations, a list of the cited pages, and token usage and cost.
+- **Hard caps** — at most 6 tool-enabled model calls and 8 tool calls, then one final call without tools so it still answers. Tool errors go back to the model instead of crashing the run.
+
 ### Explore (3D Vector Space Visualizer)
 - UMAP reduces all chunk embeddings to 3D; Plotly renders an interactive scatter plot colored by source document.
 - Submit any query to see the full retrieval pipeline animate in real time: retrieved candidates (orange), reranked top-5 (red diamonds), and the query point (purple) plotted in the same latent space.
@@ -155,3 +161,11 @@ npx @modelcontextprotocol/inspector .venv/Scripts/python mcp_server.py
 }
 ```
 On macOS/Linux use `.venv/bin/python`. The server reads `GOOGLE_API_KEY` from the repo's `.env`, so nothing else needs configuring.
+
+### 6. Agent from the CLI (optional)
+
+```bash
+python agent.py "Compare Enterprise Singapore's internationalisation support with the FY2026 budget's measures"
+```
+
+Tool calls and stats go to stderr; the streamed answer and its sources go to stdout.

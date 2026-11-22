@@ -1,4 +1,5 @@
 import streamlit as st
+import json
 import os
 import time
 import numpy as np
@@ -7,6 +8,7 @@ import plotly.graph_objects as go
 import plotly.colors as pc
 from umap import UMAP
 from rag import get_hybrid_chain
+from agent import AgentRunner, Final, Token, ToolCall, ToolResult
 from ingest import (
     DB_PATH,
     CHROMA_COLLECTION,
@@ -193,6 +195,78 @@ def build_figure(coords, texts, metadata, candidates=None, reranked=None, query_
     return fig
 
 
+# ── Agent mode helpers ────────────────────────────────────────────────────────
+
+@st.cache_resource(show_spinner="Starting the MCP server...")
+def get_agent_runner() -> AgentRunner:
+    """One MCP server subprocess for the whole app, shared by every session."""
+    return AgentRunner()
+
+
+def _tool_summary(ev: ToolResult) -> str:
+    """One line describing a tool result for the live status panel."""
+    try:
+        payload = json.loads(ev.content)
+    except ValueError:
+        return ev.content[:200]
+    if ev.name == "search_documents" and isinstance(payload, list):
+        hits = ", ".join(f"{h['source']} p.{h['page']}" for h in payload)
+        return f"{len(payload)} chunks: {hits}"
+    if ev.name == "list_documents" and isinstance(payload, list):
+        return f"{len(payload)} documents"
+    return ev.content[:200]
+
+
+def render_agent_answer(prompt: str, chat_history: list) -> str:
+    """Run the agent, showing tool calls live and streaming the answer. Returns the stored markdown."""
+    status = st.status("Agent is working...", expanded=True)
+    answer_box = st.empty()
+    streamed = ""
+    final = None
+
+    try:
+        for ev in get_agent_runner().ask(prompt, chat_history):
+            if isinstance(ev, ToolCall):
+                streamed = ""          # Text before a tool call is thinking aloud, not the answer
+                answer_box.empty()
+                args = ", ".join(f"{k}={v!r}" for k, v in ev.args.items())
+                status.markdown(f"**{ev.name}**({args})")
+            elif isinstance(ev, ToolResult):
+                if ev.is_error:
+                    status.error(ev.content[:300])
+                else:
+                    status.caption(_tool_summary(ev))
+            elif isinstance(ev, Token):
+                streamed += ev.text
+                answer_box.markdown(streamed + "▌")
+            elif isinstance(ev, Final):
+                final = ev
+    except Exception as e:
+        get_agent_runner.clear()   # Next question starts a fresh MCP server
+        status.update(label="Agent failed", state="error", expanded=True)
+        msg = f"Agent error: {type(e).__name__}: {e}"
+        answer_box.error(msg)
+        return msg
+
+    answer_box.markdown(final.answer)
+    limit_note = "" if final.stop_reason == "answered" else f" (stopped: {final.stop_reason.replace('_', ' ')})"
+    status.update(
+        label=f"Agent used {final.tool_calls} tool call{'s' * (final.tool_calls != 1)}{limit_note}",
+        state="complete" if final.stop_reason == "answered" else "error",
+        expanded=False,
+    )
+
+    sources_md = "\n\n**Sources:**\n" + "\n".join(f"- {s['source']} p.{s['page']}" for s in final.sources)
+    if final.sources:
+        st.markdown(sources_md)
+    u = final.usage
+    st.caption(
+        f"{final.iterations} model calls · {u['input_tokens']:,} in / {u['output_tokens']:,} out tokens · "
+        f"${u['usd']:.4f}"
+    )
+    return final.answer + (sources_md if final.sources else "")
+
+
 # ── App bootstrap ─────────────────────────────────────────────────────────────
 
 st.set_page_config(page_title="CorpBrain RAG", layout="wide")
@@ -297,6 +371,12 @@ active_view = st.segmented_control(
 # ── Chat Tab ──────────────────────────────────────────────────────────────────
 
 if not active_view or active_view == "Chat":
+    chat_mode = st.segmented_control(
+        "Mode", ["RAG", "Agent"], default="RAG", key="chat_mode",
+        help="RAG: one retrieval, then answer. Agent: Gemini Flash decides which "
+             "MCP tools to call (and how often) before answering.",
+    ) or "RAG"
+
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
@@ -314,6 +394,14 @@ if not active_view or active_view == "Chat":
             {"role": m["role"], "content": m["content"]}
             for m in st.session_state.messages[:-1]
         ]
+
+        if chat_mode == "Agent":
+            with st.chat_message("assistant"):
+                full_response = render_agent_answer(prompt, chat_history)
+            st.session_state.messages.append(
+                {"role": "assistant", "content": full_response, "images": []}
+            )
+            st.stop()
 
         with st.chat_message("assistant"):
             with st.spinner("Retrieving context..."):

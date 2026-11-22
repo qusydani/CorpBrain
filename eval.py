@@ -37,6 +37,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from ingest import DB_PATH, CHROMA_COLLECTION, IMAGE_OUT_PATH, DATA_PATH
+from pricing import FLASH_MODEL_ID, cost as _cost, usage as _usage
 from retriever import BASELINE_DB_PATH, Retriever, get_embedding_model
 
 load_dotenv()
@@ -48,22 +49,7 @@ TEST_SET_PATH    = os.path.join(EVAL_DATA_PATH, "test_set.json")
 RESULTS_PATH     = os.path.join(EVAL_DATA_PATH, "eval_results.json")
 
 # Gemini 2.5 Flash for all eval LLM calls — measures retrieval quality, not LLM capability
-EVAL_LLM_ID = "gemini-2.5-flash"
-
-# Gemini 2.5 Flash paid-tier list price, USD per token (text input / output).
-# Output includes thinking tokens — langchain-google-genai folds them into output_tokens.
-PRICE_IN_PER_TOKEN  = 0.30 / 1_000_000
-PRICE_OUT_PER_TOKEN = 2.50 / 1_000_000
-
-
-def _cost(input_tokens: float, output_tokens: float) -> float:
-    return input_tokens * PRICE_IN_PER_TOKEN + output_tokens * PRICE_OUT_PER_TOKEN
-
-
-def _usage(message) -> tuple:
-    """(input_tokens, output_tokens) from a LangChain AIMessage, 0s if absent."""
-    um = getattr(message, "usage_metadata", None) or {}
-    return int(um.get("input_tokens", 0)), int(um.get("output_tokens", 0))
+EVAL_LLM_ID = FLASH_MODEL_ID
 
 
 class UsageTracker(BaseCallbackHandler):
