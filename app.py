@@ -19,6 +19,8 @@ from ingest import (
     ingest_pdf_file,
 )
 from eval import (
+    AGENT_LABEL,
+    AgentConfig,
     EvalConfig,
     METRIC_DISPLAY,
     RESULTS_PATH,
@@ -669,6 +671,7 @@ elif active_view == "Eval":
             "eval_dense": True, "eval_bm25": True, "eval_hybrid": True,
             "eval_rerank": True, "eval_no_rerank": True,
             "eval_ctx": True, "eval_base": baseline_exists(),
+            "eval_agent": True,
         }
         for _k, _v in _check_defaults.items():
             if _k not in st.session_state:
@@ -685,7 +688,8 @@ elif active_view == "Eval":
             st.session_state["eval_no_rerank"] = False
             st.session_state["eval_ctx"]       = True
             st.session_state["eval_base"]      = False
-        if pre_col2.button("Full (12 configs)", use_container_width=True, key="preset_full"):
+            st.session_state["eval_agent"]     = False
+        if pre_col2.button("Full (13 configs)", use_container_width=True, key="preset_full"):
             st.session_state["eval_dense"]     = True
             st.session_state["eval_bm25"]      = True
             st.session_state["eval_hybrid"]    = True
@@ -693,8 +697,9 @@ elif active_view == "Eval":
             st.session_state["eval_no_rerank"] = True
             st.session_state["eval_ctx"]       = True
             st.session_state["eval_base"]      = baseline_exists()
+            st.session_state["eval_agent"]     = True
 
-        col_cfg1, col_cfg2, col_cfg3 = st.columns(3)
+        col_cfg1, col_cfg2, col_cfg3, col_cfg4 = st.columns(4)
         with col_cfg1:
             st.caption("Retrieval strategies")
             use_dense  = st.checkbox("Dense (semantic)", key="eval_dense")
@@ -712,6 +717,13 @@ elif active_view == "Eval":
                 disabled=not baseline_exists(),
                 key="eval_base",
             )
+        with col_cfg4:
+            st.caption("Agent")
+            use_agent = st.checkbox(
+                "Agent (LangGraph + MCP)", key="eval_agent",
+                help="The Chat tab's Agent mode as a 13th arm: plans, splits the question, "
+                     "searches via MCP tools. Same answer model and judges as the RAG configs.",
+            )
 
         strategies     = [s for s, flag in [("dense", use_dense), ("bm25", use_bm25), ("hybrid", use_hybrid)] if flag]
         reranking_opts = [v for v, flag in [(True, use_rerank), (False, use_no_rerank)] if flag]
@@ -723,6 +735,8 @@ elif active_view == "Eval":
             for r in reranking_opts
             for c in ctx_opts
         ]
+        if use_agent:
+            configs.append(AgentConfig())
 
         n_cfg = len(configs)
         n_q   = len(test_set) if test_set else 0
@@ -732,7 +746,8 @@ elif active_view == "Eval":
             f"(answer generation) + RAGAS scoring passes."
         )
 
-        run_disabled = not test_set or not strategies or not reranking_opts or not ctx_opts
+        rag_ok       = strategies and reranking_opts and ctx_opts
+        run_disabled = not test_set or not (rag_ok or use_agent)
         if st.button(
             "Run Evaluation",
             use_container_width=True,
@@ -747,7 +762,10 @@ elif active_view == "Eval":
                 eval_bar.progress(frac, text=msg)
 
             with st.spinner(f"Evaluating {n_cfg} configs..."):
-                run_full_evaluation(configs, test_set, progress_callback=eval_cb)
+                run_full_evaluation(
+                    configs, test_set, progress_callback=eval_cb,
+                    agent_runner=get_agent_runner() if use_agent else None,
+                )
 
             eval_placeholder.empty()
             st.toast("Evaluation complete!")
@@ -884,6 +902,82 @@ elif active_view == "Eval":
                 st.caption(" · ".join(
                     f"{t}: {v['n']} questions" for t, v in n_by_type.items()
                 ))
+
+                # Single- vs multi-hop accuracy per arm, sorted by multi-hop
+                acc_rows = sorted(
+                    typed_cfgs,
+                    key=lambda r: r["aggregate_by_type"].get("multi-hop", {}).get("accuracy", 0) or 0,
+                    reverse=True,
+                )
+                type_fig = go.Figure()
+                for t, color in (("single-hop", "steelblue"), ("multi-hop", "#f39c12")):
+                    vals = [r["aggregate_by_type"].get(t, {}).get("accuracy") for r in acc_rows]
+                    type_fig.add_trace(go.Bar(
+                        name=t, x=[r["label"] for r in acc_rows], y=vals, marker_color=color,
+                        text=[f"{v:.2f}" if v is not None else "" for v in vals], textposition="outside",
+                    ))
+                type_fig.update_layout(
+                    barmode="group",
+                    title="Accuracy by question type (sorted by multi-hop)",
+                    yaxis=dict(range=[0, 1.1], title="Accuracy"),
+                    height=420,
+                    margin=dict(l=40, r=40, t=60, b=120),
+                    xaxis=dict(tickangle=-30),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                )
+                st.plotly_chart(type_fig, use_container_width=True)
+
+            # ── Accuracy vs cost ──────────────────────────────────────────────
+            # Cost is answer generation only (for the agent, every model call it
+            # makes); judge cost is the same overhead for every arm, so it's left out.
+            cost_cfgs = [
+                r for r in results["configs"]
+                if r.get("cost", {}).get("answer_per_question_usd") is not None
+                and r["aggregate"].get("accuracy") is not None
+            ]
+            if cost_cfgs:
+                st.markdown("#### Accuracy vs cost")
+                rag_pts   = [r for r in cost_cfgs if r["label"] != AGENT_LABEL]
+                agent_pt  = next((r for r in cost_cfgs if r["label"] == AGENT_LABEL), None)
+                best_rag  = max(rag_pts, key=lambda r: r["aggregate"]["accuracy"], default=None)
+                scatter = go.Figure()
+                for pts, name, color, symbol, size in (
+                    (rag_pts, "Plain RAG", "steelblue", "circle", 11),
+                    ([agent_pt] if agent_pt else [], "Agent", "#f39c12", "star", 20),
+                ):
+                    if not pts:
+                        continue
+                    scatter.add_trace(go.Scatter(
+                        x=[r["cost"]["answer_per_question_usd"] for r in pts],
+                        y=[r["aggregate"]["accuracy"] for r in pts],
+                        mode="markers+text", name=name,
+                        customdata=[r["label"] for r in pts],
+                        # Label only the agent and the best RAG config; the rest cluster, so hover
+                        text=[r["label"] if r is agent_pt or r is best_rag else "" for r in pts],
+                        textposition="top center",
+                        marker=dict(color=color, size=size, symbol=symbol,
+                                    line=dict(width=1, color="white")),
+                        hovertemplate="%{customdata}<br>Accuracy %{y:.3f}"
+                                      "<br>$%{x:.5f} / question<extra></extra>",
+                    ))
+                scatter.update_layout(
+                    title=f"Accuracy vs answer cost per question ({len(cost_cfgs)} arms)",
+                    xaxis=dict(title="Answer cost per question (USD, log scale)", type="log"),
+                    yaxis=dict(title="Accuracy"),
+                    height=450,
+                    margin=dict(l=40, r=40, t=60, b=60),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                )
+                st.plotly_chart(scatter, use_container_width=True)
+                if agent_pt and best_rag:
+                    d_acc = agent_pt["aggregate"]["accuracy"] - best_rag["aggregate"]["accuracy"]
+                    rag_cost = best_rag["cost"]["answer_per_question_usd"]
+                    ratio = agent_pt["cost"]["answer_per_question_usd"] / rag_cost if rag_cost else float("nan")
+                    st.caption(
+                        f"Agent vs best plain-RAG config (`{best_rag['label']}`): "
+                        f"**{d_acc * 100:+.1f} pts accuracy** at **{ratio:.1f}× the answer cost**. "
+                        "Cost excludes judge calls, which are the same for every arm."
+                    )
 
             # ── Bar chart ─────────────────────────────────────────────────────
             chart_options = ["Overall"] + [METRIC_DISPLAY.get(k, k) for k in metric_keys]

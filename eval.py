@@ -10,6 +10,9 @@ CLI usage:
     python eval.py run [--strategies dense bm25 hybrid]
                        [--no-baseline]      # Skip baseline comparison
                        [--no-reranking]     # Skip no-rerank configs
+                       [--agent]            # Add the agent as the 13th arm
+                       [--agent-only]       # Run only the agent arm
+                       [--dev N]            # Balanced single/multi-hop dev subset of N
                        [--limit N]          # Only the first N questions
                        [--out PATH]         # Results file (default eval_data/eval_results.json)
 
@@ -36,6 +39,7 @@ from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from agent import MAX_ITERATIONS, MAX_TOOL_CALLS
 from ingest import DB_PATH, CHROMA_COLLECTION, IMAGE_OUT_PATH, DATA_PATH
 from pricing import FLASH_MODEL_ID, cost as _cost, usage as _usage
 from retriever import BASELINE_DB_PATH, Retriever, get_embedding_model
@@ -96,6 +100,27 @@ class EvalConfig:
         r = "+Rerank" if self.reranking else ""
         c = "+Ctx"    if self.contextual else "+Base"
         return f"{s}{r}{c}"
+
+
+AGENT_LABEL = "Agent"
+
+# RAGAS per-job deadline (seconds). Context precision judges each retrieved chunk
+# in turn inside one job; a plain-RAG config passes 5 chunks, but the agent passes
+# every distinct chunk across its sub-searches (often 15-30), which overran 120s.
+RAGAS_TIMEOUT       = 120
+AGENT_RAGAS_TIMEOUT = 360
+
+
+@dataclass
+class AgentConfig:
+    """The LangGraph agent (agent.py) as an eval arm, with its tool-loop caps."""
+    max_iterations: int = MAX_ITERATIONS
+    max_tool_calls: int = MAX_TOOL_CALLS
+    kind:           str = "agent"   # Tells agent rows apart from EvalConfig rows in results
+
+    @property
+    def label(self) -> str:
+        return AGENT_LABEL
 
 
 # ── Overall score ─────────────────────────────────────────────────────────────
@@ -582,7 +607,7 @@ def create_baseline_collection(progress_callback=None):
 
 # ── RAGAS scoring ──────────────────────────────────────────────────────────────
 
-def _run_ragas(samples: list, ragas_llm, ragas_emb) -> tuple:
+def _run_ragas(samples: list, ragas_llm, ragas_emb, timeout: int = RAGAS_TIMEOUT) -> tuple:
     """
     Run all 5 RAGAS metrics on collected samples.
     Returns (aggregate_scores: dict, per_question_scores: list[dict], usage: UsageTracker).
@@ -597,7 +622,8 @@ def _run_ragas(samples: list, ragas_llm, ragas_emb) -> tuple:
     Unbounded concurrency trips rate limits and produces TimeoutError → NaN.
 
     max_workers=4  — keeps the request rate comfortably under Gemini's per-minute cap
-    timeout=120    — 2-minute per-job deadline (60s default is too tight under load)
+    timeout        — per-job deadline; RAGAS_TIMEOUT (120s, the 60s default is too
+                     tight under load), AGENT_RAGAS_TIMEOUT for the agent's larger contexts
     max_retries=3  — retry timed-out or rate-limited jobs before giving up
     """
     from ragas import evaluate
@@ -623,7 +649,7 @@ def _run_ragas(samples: list, ragas_llm, ragas_emb) -> tuple:
         for s in samples
     ])
 
-    run_cfg = RunConfig(max_workers=4, timeout=120, max_retries=3)
+    run_cfg = RunConfig(max_workers=4, timeout=timeout, max_retries=3)
     usage   = UsageTracker()
 
     result = evaluate(
@@ -727,36 +753,34 @@ def _make_sub_progress(config_idx: int, total_configs: int, parent_cb):
     return sub_cb
 
 
-def run_config(
-    test_set:   list,
-    config:     EvalConfig,
-    llm:        ChatGoogleGenerativeAI,
-    judge_llm:  ChatGoogleGenerativeAI,
-    ragas_llm,
-    ragas_emb,
-    progress_callback=None,
-) -> dict:
+def dev_subset(test_set: list, n: int) -> list:
     """
-    Evaluate one EvalConfig.
-    Returns {"aggregate", "per_question", "cost", "latency"}.
+    A small balanced subset for cheap checks: the first ceil(n/2) single-hop and
+    first floor(n/2) multi-hop questions, topped up from the other type when one
+    runs short. Order within each type is kept, so repeated runs pick the same set.
+    """
+    single = [q for q in test_set if q.get("type", "single-hop") != "multi-hop"]
+    multi  = [q for q in test_set if q.get("type") == "multi-hop"]
+    n_single = min(n - min(n // 2, len(multi)), len(single))
+    n_multi  = min(n - n_single, len(multi))
+    return single[:n_single] + multi[:n_multi]
 
-    Latency is per question: retrieval + answer generation (what a user waits for).
-    Cost covers every LLM call: answer generation, accuracy judge and RAGAS judge.
-    RAGAS usage is only observable per config, so it's split evenly across questions.
+
+def _rag_samples(test_set: list, config: EvalConfig, llm, progress_callback=None) -> list:
+    """
+    Answer every question with one plain-RAG config.
+    Latency per question: retrieval + answer generation (what a user waits for).
     """
     retriever = Retriever(
         strategy=config.strategy, rerank=config.reranking, contextual=config.contextual,
     )
-    samples   = []
-
+    samples = []
     for i, item in enumerate(test_set):
-        question     = item["question"]
-        ground_truth = item["ground_truth"]
-
+        question = item["question"]
         if progress_callback:
             progress_callback(
                 f"[{config.label}] Q{i + 1}/{len(test_set)}: {question[:70]}",
-                (i + 0.5) / len(test_set),
+                0.9 * (i + 0.5) / len(test_set),
             )
 
         # Retrieve top 5 (reranked, or first 5 candidates when reranking is off)
@@ -774,30 +798,112 @@ def run_config(
         )
         answer_msg = llm.invoke([HumanMessage(content=answer_prompt)])
         latency    = time.perf_counter() - t0
-        answer     = answer_msg.content
         ans_in, ans_out = _usage(answer_msg)
-
-        correct, acc_in, acc_out = _judge_accuracy(judge_llm, question, ground_truth, answer)
 
         samples.append({
             "question":     question,
             "type":         item.get("type", "single-hop"),
-            "ground_truth": ground_truth,
-            "answer":       answer,
+            "ground_truth": item["ground_truth"],
+            "answer":       answer_msg.content,
             "contexts":     contexts,
             "latency_s":    round(latency, 3),
-            "accuracy":     correct,
-            "tokens": {
-                "answer_in": ans_in, "answer_out": ans_out,
-                "accuracy_judge_in": acc_in, "accuracy_judge_out": acc_out,
+            "tokens":       {"answer_in": ans_in, "answer_out": ans_out},
+        })
+    return samples
+
+
+def _agent_samples(
+    test_set: list, config: AgentConfig, runner, session_id: Optional[str] = None,
+    progress_callback=None,
+) -> list:
+    """
+    Answer every question with the agent, through `runner` (an agent.AgentRunner,
+    or anything with the same ask()).
+
+    contexts: every distinct chunk search_documents returned, across all sub-queries.
+    tokens:   the agent's own usage over every model call (router, planner, grader,
+              loop, synthesizer), so cost reflects what the agent actually spent.
+    latency:  wall clock for the whole agent run.
+    A question that raises is recorded with an empty answer and an `error`, and
+    scores 0 accuracy, so one failure doesn't lose the rest of the arm.
+    """
+    from agent import Final
+
+    samples = []
+    for i, item in enumerate(test_set):
+        question = item["question"]
+        if progress_callback:
+            progress_callback(
+                f"[{config.label}] Q{i + 1}/{len(test_set)}: {question[:70]}",
+                0.9 * (i + 0.5) / len(test_set),
+            )
+
+        final, error = None, None
+        t0 = time.perf_counter()
+        try:
+            for ev in runner.ask(question, None, max_iterations=config.max_iterations,
+                                 max_tool_calls=config.max_tool_calls, session_id=session_id):
+                if isinstance(ev, Final):
+                    final = ev
+            if final is None:
+                error = "Agent produced no final answer."
+        except Exception as e:
+            error = f"{type(e).__name__}: {e}"
+        latency = time.perf_counter() - t0
+        if error:
+            print(f"  WARNING: agent failed on Q{i + 1}: {error}")
+
+        usage_ = final.usage if final else {}
+        samples.append({
+            "question":     question,
+            "type":         item.get("type", "single-hop"),
+            "ground_truth": item["ground_truth"],
+            "answer":       final.answer if final else "",
+            "contexts":     list(dict.fromkeys(r["content"] for r in final.retrieved)) if final else [],
+            "latency_s":    round(latency, 3),
+            "tokens":       {"answer_in":  usage_.get("input_tokens", 0),
+                             "answer_out": usage_.get("output_tokens", 0)},
+            "agent": {
+                "route":       final.route if final else None,
+                "tool_calls":  final.tool_calls if final else 0,
+                "iterations":  final.iterations if final else 0,
+                "stop_reason": final.stop_reason if final else None,
+                "error":       error,
             },
         })
+    return samples
 
-    # RAGAS scoring (batch — one evaluate() call per config)
+
+def _score_samples(
+    samples: list, label: str, judge_llm, ragas_llm, ragas_emb, progress_callback=None,
+    ragas_timeout: int = RAGAS_TIMEOUT,
+) -> dict:
+    """
+    Score answered samples the same way for every arm: accuracy judge, RAGAS,
+    cost, latency and the per-type breakdown.
+    Returns {"aggregate", "aggregate_by_type", "per_question", "cost", "latency"}.
+
+    Cost covers every LLM call: answer generation, accuracy judge and RAGAS judge.
+    RAGAS usage is only observable per config, so it's split evenly across questions.
+    """
+    # ── Accuracy judge ────────────────────────────────────────────────────────
+    for i, s in enumerate(samples):
+        if progress_callback:
+            progress_callback(f"[{label}] Judging Q{i + 1}/{len(samples)}",
+                              0.9 + 0.03 * (i + 1) / len(samples))
+        if s.get("agent", {}).get("error"):
+            correct, acc_in, acc_out = 0, 0, 0   # Failed run: nothing to judge
+        else:
+            correct, acc_in, acc_out = _judge_accuracy(
+                judge_llm, s["question"], s["ground_truth"], s["answer"])
+        s["accuracy"] = correct
+        s["tokens"].update(accuracy_judge_in=acc_in, accuracy_judge_out=acc_out)
+
+    # ── RAGAS scoring (batch — one evaluate() call per config) ────────────────
     if progress_callback:
-        progress_callback(f"[{config.label}] Scoring with RAGAS...", 0.95)
+        progress_callback(f"[{label}] Scoring with RAGAS...", 0.95)
 
-    aggregate, per_q, ragas_usage = _run_ragas(samples, ragas_llm, ragas_emb)
+    aggregate, per_q, ragas_usage = _run_ragas(samples, ragas_llm, ragas_emb, timeout=ragas_timeout)
 
     # ── Accuracy ──────────────────────────────────────────────────────────────
     graded = [s["accuracy"] for s in samples if s["accuracy"] is not None]
@@ -822,6 +928,8 @@ def run_config(
         row["cost_usd"]  = round(_cost(in_tok, out_tok), 6)
         row["tokens"]    = t
         row["answer"]    = s["answer"]
+        if "agent" in s:
+            row.update(s["agent"])
 
     answer_cost = sum(_cost(s["tokens"]["answer_in"], s["tokens"]["answer_out"]) for s in samples)
     acc_cost    = sum(_cost(s["tokens"]["accuracy_judge_in"], s["tokens"]["accuracy_judge_out"])
@@ -860,6 +968,36 @@ def run_config(
     }
 
 
+def run_config(
+    test_set:   list,
+    config:     EvalConfig,
+    llm:        ChatGoogleGenerativeAI,
+    judge_llm:  ChatGoogleGenerativeAI,
+    ragas_llm,
+    ragas_emb,
+    progress_callback=None,
+) -> dict:
+    """Evaluate one plain-RAG EvalConfig. See _score_samples for the result shape."""
+    samples = _rag_samples(test_set, config, llm, progress_callback)
+    return _score_samples(samples, config.label, judge_llm, ragas_llm, ragas_emb, progress_callback)
+
+
+def run_agent_config(
+    test_set:   list,
+    config:     AgentConfig,
+    runner,
+    judge_llm:  ChatGoogleGenerativeAI,
+    ragas_llm,
+    ragas_emb,
+    session_id: Optional[str] = None,
+    progress_callback=None,
+) -> dict:
+    """Evaluate the agent arm. Same scoring and result shape as run_config."""
+    samples = _agent_samples(test_set, config, runner, session_id, progress_callback)
+    return _score_samples(samples, config.label, judge_llm, ragas_llm, ragas_emb, progress_callback,
+                          ragas_timeout=AGENT_RAGAS_TIMEOUT)
+
+
 # ── Full evaluation ────────────────────────────────────────────────────────────
 
 def run_full_evaluation(
@@ -867,14 +1005,19 @@ def run_full_evaluation(
     test_set:          list,
     progress_callback=None,
     results_path:      str = RESULTS_PATH,
+    agent_runner=None,
 ) -> dict:
     """
-    Run evaluation across all configs. Saves results to eval_data/eval_results.json.
+    Run evaluation across all configs (EvalConfig and/or AgentConfig). Saves
+    results to eval_data/eval_results.json.
 
     Checkpointing: results are written to disk after every completed config so a
     crash mid-run doesn't lose all progress. Already-completed config labels are
     detected on resume and skipped — only the remaining configs are re-run and
     merged back into the existing file.
+
+    agent_runner: an agent.AgentRunner to reuse (e.g. the app's). When omitted
+    and an AgentConfig is pending, one is started and closed here.
 
     Returns the full results dict.
     """
@@ -893,6 +1036,10 @@ def run_full_evaluation(
         if done_labels & {c.label for c in configs}:
             skipped = sorted(done_labels & {c.label for c in configs})
             print(f"  Resuming — skipping {len(skipped)} already-completed config(s): {skipped}")
+        if pending and existing.get("n_questions") not in (None, len(test_set)):
+            print(f"  WARNING: {results_path} holds results on {existing['n_questions']} questions, "
+                  f"but this run uses {len(test_set)}. The new configs won't be comparable with "
+                  f"the saved ones; use --out for a separate file.")
     else:
         pending = configs
         results = []
@@ -912,40 +1059,60 @@ def run_full_evaluation(
     ragas_llm       = LangchainLLMWrapper(judge_llm)
     ragas_emb       = LangchainEmbeddingsWrapper(get_embedding_model())
 
+    own_runner = None
+    if agent_runner is None and any(isinstance(c, AgentConfig) for c in pending):
+        from agent import AgentRunner
+        agent_runner = own_runner = AgentRunner()
+    # Groups this run's agent traces in Langfuse (when tracing is on).
+    session_id = f"eval-{datetime.now():%Y%m%d-%H%M%S}"
+
     total = len(configs)
-    for i, config in enumerate(pending):
-        overall_idx = total - len(pending) + i  # position in the full config list
-        if progress_callback:
-            progress_callback(
-                f"Starting config {overall_idx + 1}/{total}: {config.label}",
-                overall_idx / total,
-            )
+    try:
+        for i, config in enumerate(pending):
+            overall_idx = total - len(pending) + i  # position in the full config list
+            if progress_callback:
+                progress_callback(
+                    f"Starting config {overall_idx + 1}/{total}: {config.label}",
+                    overall_idx / total,
+                )
 
-        config_result = run_config(
-            test_set, config, llm, judge_llm, ragas_llm, ragas_emb,
-            progress_callback=_make_sub_progress(overall_idx, total, progress_callback),
-        )
-        results.append({
-            "config":        asdict(config),
-            "label":         config.label,
-            "overall_score": _overall_score(config_result["aggregate"]),
-            **config_result,
-        })
+            sub_cb = _make_sub_progress(overall_idx, total, progress_callback)
+            if isinstance(config, AgentConfig):
+                config_result = run_agent_config(
+                    test_set, config, agent_runner, judge_llm, ragas_llm, ragas_emb,
+                    session_id=session_id, progress_callback=sub_cb,
+                )
+            else:
+                config_result = run_config(
+                    test_set, config, llm, judge_llm, ragas_llm, ragas_emb,
+                    progress_callback=sub_cb,
+                )
+            results.append({
+                "config":        asdict(config),
+                "label":         config.label,
+                "overall_score": _overall_score(config_result["aggregate"]),
+                **config_result,
+            })
 
-        # ── Checkpoint after every config ─────────────────────────────────────
-        checkpoint = {
-            "timestamp":   datetime.now().isoformat(),
-            "n_questions": len(test_set),
-            "configs":     results,
-        }
-        with open(results_path, "w", encoding="utf-8") as f:
-            json.dump(checkpoint, f, ensure_ascii=False, indent=2)
+            # ── Checkpoint after every config ─────────────────────────────────
+            checkpoint = {
+                "timestamp":   datetime.now().isoformat(),
+                "n_questions": len(test_set),
+                "configs":     results,
+            }
+            with open(results_path, "w", encoding="utf-8") as f:
+                json.dump(checkpoint, f, ensure_ascii=False, indent=2)
 
-        if progress_callback:
-            progress_callback(
-                f"Checkpoint saved ({len(results)}/{total} configs done).",
-                (overall_idx + 1) / total,
-            )
+            if progress_callback:
+                progress_callback(
+                    f"Checkpoint saved ({len(results)}/{total} configs done).",
+                    (overall_idx + 1) / total,
+                )
+    finally:
+        if own_runner is not None:
+            own_runner.close()
+            from observability import flush as flush_traces
+            flush_traces()
 
     if progress_callback:
         progress_callback("Done — all results saved.", 1.0)
@@ -980,6 +1147,10 @@ if __name__ == "__main__":
     run_p.add_argument("--no-baseline",  action="store_true", help="Skip baseline configs")
     run_p.add_argument("--no-reranking", action="store_true", help="Skip no-reranking configs")
     run_p.add_argument("--limit", type=int, default=None, help="Only evaluate the first N questions")
+    run_p.add_argument("--dev", type=int, default=None, metavar="N",
+                       help="Balanced dev subset: first ceil(N/2) single-hop + floor(N/2) multi-hop")
+    run_p.add_argument("--agent", action="store_true", help="Add the agent as the 13th arm")
+    run_p.add_argument("--agent-only", action="store_true", help="Run only the agent arm")
     run_p.add_argument("--out", default=RESULTS_PATH, help=f"Results file (default: {RESULTS_PATH})")
 
     args = parser.parse_args()
@@ -1036,23 +1207,27 @@ if __name__ == "__main__":
         if not ts:
             print(f"No test set found. Run 'python eval.py generate' first.")
             raise SystemExit(1)
+        if args.dev:
+            ts = dev_subset(ts, args.dev)
         if args.limit:
             ts = ts[: args.limit]
 
         reranking_opts  = [True, False] if not args.no_reranking  else [True]
         contextual_opts = [True]
-        if not args.no_baseline:
+        if not args.no_baseline and not args.agent_only:
             if baseline_exists():
                 contextual_opts.append(False)
             else:
                 print("Baseline DB not found — run 'python eval.py baseline' first. Skipping baseline configs.")
 
-        configs = [
+        configs = [] if args.agent_only else [
             EvalConfig(strategy=s, reranking=r, contextual=c)
             for s in args.strategies
             for r in reranking_opts
             for c in contextual_opts
         ]
+        if args.agent or args.agent_only:
+            configs.append(AgentConfig())
 
         print(f"Running {len(configs)} configs × {len(ts)} questions...\n")
         results = run_full_evaluation(configs, ts, progress_callback=cli_cb, results_path=args.out)
