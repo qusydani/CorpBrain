@@ -119,6 +119,7 @@ Query
 | Dimensionality Reduction | UMAP |
 | Visualization | Plotly |
 | UI | Streamlit |
+| Tracing | Langfuse v4 (self-hosted, Docker Compose) |
 
 ---
 
@@ -187,3 +188,22 @@ python agent.py "Compare Enterprise Singapore's internationalisation support wit
 ```
 
 Tool calls and stats go to stderr; the streamed answer and its sources go to stdout.
+
+### 7. Tracing with Langfuse (optional)
+
+Self-hosted [Langfuse](https://langfuse.com) v4 records every agent question as one trace: each Gemini call is a generation with its tokens, $ cost and latency, and each MCP tool call (`search_documents`, `get_page`, `get_page_image`, `list_documents`) is a tool span with its arguments, result and latency. Requires Docker and Python 3.11+ (for the `langfuse` SDK).
+
+1. Add the project keys to `.env`. On first boot the server creates a `corpbrain` project with exactly these keys:
+   ```
+   LANGFUSE_PUBLIC_KEY=pk-lf-corpbrain-local
+   LANGFUSE_SECRET_KEY=sk-lf-corpbrain-local
+   LANGFUSE_BASE_URL=http://localhost:3000
+   ```
+2. Start the stack (web, worker, Postgres, ClickHouse, Redis, MinIO):
+   ```bash
+   docker compose --profile observability up -d
+   ```
+3. Open http://localhost:3000 and sign in as `admin@corpbrain.local` / `corpbrain-admin`.
+4. Start the app or run `python agent.py "..."`. Traces appear under **Tracing**; chats from one browser session share a session id.
+
+Tracing turns on only when the keys are set and the server answers its health check when the app starts. Otherwise the app runs as usual with tracing silently off, so start Langfuse before the app, or restart the app after starting Langfuse. The first time tracing turns on, the app registers the Gemini 2.5 Flash price from `pricing.py` in the project (**Settings → Models**), so Langfuse's costs match the eval's. The admin password, keys and every database secret have local-only defaults. Override the `LANGFUSE_*` variables listed in `docker-compose.yml` before exposing the stack beyond your machine. To stop it: `docker compose --profile observability down` (add `-v` to delete trace data).

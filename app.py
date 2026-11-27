@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import os
 import time
+import uuid
 import numpy as np
 import chromadb
 import plotly.graph_objects as go
@@ -229,7 +230,9 @@ def render_agent_answer(prompt: str, chat_history: list) -> tuple[str, list]:
     final = None
 
     try:
-        for ev in get_agent_runner().ask(prompt, chat_history):
+        for ev in get_agent_runner().ask(
+            prompt, chat_history, session_id=st.session_state.trace_session_id
+        ):
             if isinstance(ev, Plan):
                 if ev.sub_questions:
                     status.update(label=f"Researching {len(ev.sub_questions)} sub-questions...")
@@ -302,6 +305,10 @@ if "messages" not in st.session_state:
 
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = "uploader_0"
+
+if "trace_session_id" not in st.session_state:
+    # Groups this browser session's agent questions in Langfuse (when tracing is on)
+    st.session_state.trace_session_id = f"chat-{uuid.uuid4().hex[:12]}"
 
 
 # ── Sidebar: Document Upload ──────────────────────────────────────────────────

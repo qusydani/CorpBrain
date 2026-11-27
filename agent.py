@@ -68,6 +68,7 @@ from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 from pydantic import BaseModel, Field
 
+from observability import agent_trace, flush as flush_traces, tool_span
 from pricing import FLASH_MODEL_ID, cost, usage
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -239,7 +240,15 @@ class MCPToolbox:
         """(text for the model, is_error, parsed payload or None). Never raises.
 
         A result with image blocks has payload {"text", "images": [{"mime_type",
-        "data" (base64)}]}, where text is whatever text blocks came with them."""
+        "data" (base64)}]}, where text is whatever text blocks came with them.
+        Each call is a Langfuse tool span when tracing is on (text only, no image data)."""
+        with tool_span(name, args) as span:
+            text, is_error, payload = await self._call(name, args)
+            span.update(output=text, level="ERROR" if is_error else "DEFAULT",
+                        status_message=text[:200] if is_error else None)
+        return text, is_error, payload
+
+    async def _call(self, name: str, args: dict) -> tuple[str, bool, Any]:
         if name not in self.names:
             return f"Unknown tool {name!r}. Available tools: {sorted(self.names)}", True, None
         try:
@@ -610,8 +619,12 @@ async def run_agent(
     llm=None,
     max_iterations: int = MAX_ITERATIONS,
     max_tool_calls: int = MAX_TOOL_CALLS,
+    session_id: str | None = None,
 ) -> AsyncIterator[Event]:
-    """Answer one question, yielding Plan, ToolCall/ToolResult, Token events, then a Final."""
+    """Answer one question, yielding Plan, ToolCall/ToolResult, Token events, then a Final.
+
+    With Langfuse on (see observability.py) the run is one trace: LLM calls as
+    generations, MCP tool calls as tool spans, grouped by session_id if given."""
     graph = build_graph(llm or default_llm(), toolbox, max_iterations, max_tool_calls)
     state = {
         "messages": [SystemMessage(SYSTEM_PROMPT), *_history_messages(history), HumanMessage(question)],
@@ -623,15 +636,21 @@ async def run_agent(
     # max_iterations + 1) and tool steps; the complex path needs only six.
     config = {"recursion_limit": 2 * max_iterations + 6}
 
-    final_state = state
-    async for mode, data in graph.astream(state, config, stream_mode=["custom", "values"]):
-        if mode == "custom":
-            yield data
-        else:
-            final_state = data
+    with agent_trace(question, session_id) as trace:
+        config["callbacks"] = trace.callbacks
+        final_state = state
+        async for mode, data in graph.astream(state, config, stream_mode=["custom", "values"]):
+            if mode == "custom":
+                yield data
+            else:
+                final_state = data
 
-    answer = _text(final_state["messages"][-1].content)
-    in_tok, out_tok = final_state["input_tokens"], final_state["output_tokens"]
+        answer = _text(final_state["messages"][-1].content)
+        in_tok, out_tok = final_state["input_tokens"], final_state["output_tokens"]
+        trace.update(output=answer, metadata={
+            "route": final_state["route"], "stop_reason": final_state["stop_reason"],
+            "tool_calls": str(final_state["tool_calls"]), "iterations": str(final_state["iterations"]),
+        })
     yield Final(
         answer=answer,
         sources=match_sources(answer, final_state["retrieved"]),
@@ -741,6 +760,7 @@ async def _cli(question: str):
                 print(f"\n{ev.route} route · {ev.iterations} model calls · {ev.tool_calls} tool calls · "
                       f"{u['input_tokens']} in / {u['output_tokens']} out tokens · "
                       f"${u['usd']:.4f} · stop: {ev.stop_reason}", file=sys.stderr)
+    flush_traces()
 
 
 if __name__ == "__main__":
