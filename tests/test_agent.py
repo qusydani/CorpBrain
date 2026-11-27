@@ -17,8 +17,11 @@ from langchain_core.runnables import RunnableLambda
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent import (  # noqa: E402
-    AgentRunner, Final, Plan, Token, ToolCall, ToolResult, match_sources, run_agent,
+    MAX_SYNTH_IMAGES, AgentRunner, Final, Plan, Token, ToolCall, ToolResult, match_sources, run_agent,
 )
+from langchain_core.messages import HumanMessage  # noqa: E402
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 STRUCTURED_TOKENS = (1, 1)   # Usage reported by each scripted structured call
 SIMPLE = {"complexity": "simple", "reason": "one fact"}
@@ -37,6 +40,7 @@ class ScriptedModel(BaseChatModel):
     structured: dict = {}
     calls: int = 0
     structured_calls: list = []
+    seen: list = []          # The messages of every generated call
 
     @property
     def _llm_type(self) -> str:
@@ -65,12 +69,13 @@ class ScriptedModel(BaseChatModel):
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
         msg = self.script[min(self.calls, len(self.script) - 1)]
         object.__setattr__(self, "calls", self.calls + 1)
+        self.seen.append(list(messages))
         return ChatResult(generations=[ChatGeneration(message=msg)])
 
 
 def model_of(script, structured=None):
     # Fresh lists per model: pydantic copies mutable defaults, but be explicit.
-    return ScriptedModel(script=script, structured=structured or {}, structured_calls=[])
+    return ScriptedModel(script=script, structured=structured or {}, structured_calls=[], seen=[])
 
 
 def call(name, args=None, id="c1"):
@@ -246,8 +251,10 @@ def test_complex_question_plans_searches_and_synthesizes(runner):
     assert sum(isinstance(e, Plan) for e in events) == 1
 
     final = events[-1]
+    images = [e for e in events if isinstance(e, ToolCall) and e.name == "get_page_image"]
     assert final.route == "complex" and final.answer == "Combined answer."
-    assert final.tool_calls == 3                        # list_documents + 2 searches
+    assert len(images) <= MAX_SYNTH_IMAGES              # Only if searches found image summaries
+    assert final.tool_calls == 3 + len(images)          # list_documents + 2 searches (+ page images)
     assert final.iterations == 4                        # router, planner, grader, synthesizer
     assert final.retrieved                              # Real search results reached the state
     assert model.structured_calls == ["Route", "SearchPlan", "Coverage"]
@@ -329,3 +336,117 @@ def test_sub_question_searches_run_in_parallel():
     events = asyncio.run(run())
     assert toolbox.peak == 3
     assert events[-1].sources == [{"source": "a.pdf", "page": 1}]
+
+
+# ── Page images ───────────────────────────────────────────────────────────────
+
+def image_blocks(message) -> list:
+    if not isinstance(message, HumanMessage) or isinstance(message.content, str):
+        return []
+    return [b for b in message.content if isinstance(b, dict) and b.get("type") == "image_url"]
+
+
+def _page_source():
+    """An ingested source whose PDF is in data/, or None."""
+    cwd = os.getcwd()
+    try:
+        os.chdir(ROOT)
+        from ingest import get_ingested_files
+        return next((s for s in get_ingested_files() if os.path.exists(os.path.join(ROOT, "data", s))), None)
+    finally:
+        os.chdir(cwd)
+
+
+needs_pdf = pytest.mark.skipif(_page_source() is None, reason="no ingested source with its PDF in data/")
+
+
+@needs_pdf
+def test_page_image_reaches_the_model_and_the_final(runner):
+    src = _page_source()
+    args = {"source": src, "page": 1}
+    model = model_of([ai(tool_calls=[call("get_page_image", args)]), ai("The diagram shows X.")])
+    events = ask(runner, model)
+
+    result = next(e for e in events if isinstance(e, ToolResult))
+    assert not result.is_error and src in result.content
+    # The second loop call sees the tool message, then the image as a user message.
+    blocks = image_blocks(model.seen[1][-1])
+    assert len(blocks) == 1 and blocks[0]["image_url"]["url"].startswith("data:image/jpeg;base64,")
+    final = events[-1]
+    assert [(i["source"], i["page"], i["mime_type"]) for i in final.images] == [(src, 1, "image/jpeg")]
+    assert final.images[0]["data"][:2] == b"\xff\xd8"
+
+
+@needs_pdf
+def test_bad_page_is_a_tool_error_and_the_agent_recovers(runner):
+    src = _page_source()
+    model = model_of([
+        ai(tool_calls=[call("get_page_image", {"source": src, "page": 99999})]),
+        ai(tool_calls=[call("get_page", {"source": src, "page": 99999}, id="c2")]),
+        ai("No such page."),
+    ])
+    events = ask(runner, model)
+    results = [e for e in events if isinstance(e, ToolResult)]
+    assert [r.is_error for r in results] == [True, True]
+    assert all("99999" in r.content for r in results)
+    assert not any(image_blocks(m) for m in model.seen[-1])
+    assert events[-1].images == [] and events[-1].answer == "No such page."
+
+
+@needs_pdf
+def test_get_page_returns_text_to_the_model(runner):
+    src = _page_source()
+    model = model_of([ai(tool_calls=[call("get_page", {"source": src, "page": 1})]), ai("Done.")])
+    events = ask(runner, model)
+    result = next(e for e in events if isinstance(e, ToolResult))
+    assert not result.is_error and '"text"' in result.content
+    assert events[-1].images == []
+
+
+class ImageToolbox:
+    """Fake toolbox: every search finds image summaries on pages 1-3 of a.pdf."""
+
+    specs = [{"type": "function", "function": {"name": n, "description": "", "parameters": {}}}
+             for n in ("search_documents", "list_documents", "get_page_image")]
+
+    def __init__(self):
+        self.image_calls = []
+
+    async def call(self, name, args):
+        if name == "list_documents":
+            return "[]", False, []
+        if name == "get_page_image":
+            self.image_calls.append(args)
+            return "Page image", False, {"text": "Page image", "images": [
+                {"mime_type": "image/jpeg", "data": "/9j/"}]}
+        hits = [{"rank": p, "source": "a.pdf", "page": p, "type": "image_summary", "content": "fig"}
+                for p in (1, 2, 3)]
+        return "[]", False, hits
+
+
+def run_with(toolbox, model, **kw):
+    async def go():
+        return [ev async for ev in run_agent("q", toolbox=toolbox, llm=model, **kw)]
+    return asyncio.run(go())
+
+
+def test_complex_path_attaches_at_most_two_page_images():
+    model = model_of([ai("Answer [a.pdf p.1].")],
+                     {"Route": [COMPLEX], "SearchPlan": [plan_of("figure")], "Coverage": [all_ok(1)]})
+    toolbox = ImageToolbox()
+    events = run_with(toolbox, model)
+
+    assert toolbox.image_calls == [{"source": "a.pdf", "page": 1}, {"source": "a.pdf", "page": 2}]
+    assert len(image_blocks(model.seen[-1][-1])) == MAX_SYNTH_IMAGES
+    final = events[-1]
+    assert [(i["source"], i["page"]) for i in final.images] == [("a.pdf", 1), ("a.pdf", 2)]
+    assert final.tool_calls == 1 + 1 + 2                # list_documents, search, 2 images
+
+
+def test_complex_path_images_respect_the_tool_budget():
+    model = model_of([ai("Answer.")],
+                     {"Route": [COMPLEX], "SearchPlan": [plan_of("figure")], "Coverage": [all_ok(1)]})
+    toolbox = ImageToolbox()
+    events = run_with(toolbox, model, max_tool_calls=3)
+    assert len(toolbox.image_calls) == 1
+    assert events[-1].tool_calls == 3

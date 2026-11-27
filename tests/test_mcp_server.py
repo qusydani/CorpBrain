@@ -56,10 +56,10 @@ def _payload(res):
     return [json.loads(c.text) for c in res.content]
 
 
-def test_lists_both_tools_with_schemas():
+def test_lists_every_tool_with_schemas():
     tools = run(lambda s: s.list_tools()).tools
     by_name = {t.name: t for t in tools}
-    assert set(by_name) == {"search_documents", "list_documents"}
+    assert set(by_name) == {"search_documents", "list_documents", "get_page", "get_page_image"}
 
     search = by_name["search_documents"]
     assert search.description and "chunks" in search.description
@@ -68,6 +68,12 @@ def test_lists_both_tools_with_schemas():
     assert search.input_schema["required"] == ["query"]
     assert props["query"]["description"]
     assert by_name["list_documents"].description
+
+    for name in ("get_page", "get_page_image"):
+        tool = by_name[name]
+        assert tool.description and "page" in tool.description.lower()
+        assert set(tool.input_schema["properties"]) == {"source", "page"}
+        assert sorted(tool.input_schema["required"]) == ["page", "source"]
 
 
 @needs_db
@@ -111,3 +117,59 @@ def test_unknown_source_is_an_error():
     res = run(lambda s: _call(s, "search_documents", {"query": "x", "sources": ["nope.pdf"]}))
     assert res.is_error
     assert "nope.pdf" in res.content[0].text
+
+
+# ── Page tools (need the source PDF in data/ too) ─────────────────────────────
+
+def _page_source():
+    """An ingested source whose PDF is in data/, or None."""
+    os.chdir(ROOT)
+    from ingest import get_ingested_files
+    return next((s for s in get_ingested_files() if os.path.exists(os.path.join(ROOT, "data", s))), None)
+
+
+needs_pdf = pytest.mark.skipif(not _db_ready() or _page_source() is None,
+                               reason="no ingested source with its PDF in data/")
+
+
+@needs_pdf
+def test_get_page_returns_full_page_text():
+    import fitz
+    src = _page_source()
+    res = run(lambda s: _call(s, "get_page", {"source": src, "page": 1}))
+    assert not res.is_error, res.content
+    page = _payload(res)
+    with fitz.open(os.path.join(ROOT, "data", src)) as doc:
+        expected = doc.load_page(0).get_text()
+    assert page["source"] == src and page["page"] == 1
+    assert page["text"] == expected
+    assert "image_summary" in page
+
+
+@needs_pdf
+def test_get_page_image_returns_a_jpeg():
+    import base64
+    src = _page_source()
+    res = run(lambda s: _call(s, "get_page_image", {"source": src, "page": 1}))
+    assert not res.is_error, res.content
+    images = [c for c in res.content if c.type == "image"]
+    assert len(images) == 1 and images[0].mime_type == "image/jpeg"
+    assert base64.b64decode(images[0].data)[:2] == b"\xff\xd8"   # JPEG magic
+    assert any(c.type == "text" and src in c.text for c in res.content)
+
+
+@needs_pdf
+def test_page_out_of_range_is_an_error():
+    src = _page_source()
+    for tool in ("get_page", "get_page_image"):
+        res = run(lambda s: _call(s, tool, {"source": src, "page": 99999}))
+        assert res.is_error
+        assert "99999" in res.content[0].text and "pages 1-" in res.content[0].text
+
+
+@needs_db
+def test_page_tools_reject_unknown_source():
+    for tool in ("get_page", "get_page_image"):
+        res = run(lambda s: _call(s, tool, {"source": "nope.pdf", "page": 1}))
+        assert res.is_error
+        assert "nope.pdf" in res.content[0].text and "Ingested sources" in res.content[0].text

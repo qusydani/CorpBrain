@@ -24,7 +24,13 @@ Graph:
     search      one search_documents call per sub-question, all in parallel
     grade       one structured call marks each sub-question's results ok or thin
     research    one retry per thin sub-question: a rewritten query, no file filter
-    synthesize  one call without tools writes the cited answer from all findings
+    synthesize  fetches page images for up to MAX_SYNTH_IMAGES image_summary pages
+                in the findings, then one call without tools writes the cited
+                answer from all findings and images
+
+Page images: get_page_image returns an image block. Gemini doesn't reliably take
+images inside a tool message, so each image goes to it as a HumanMessage right
+after the tool results. Every image the agent looked at ends up in Final.images.
 
 Events, in order: one Plan once the route (and for complex questions the
 sub-questions) is known, ToolCall / ToolResult pairs as tools run, Token
@@ -38,6 +44,7 @@ has; Final.stop_reason records which cap hit. On the complex path, searches
 beyond the tool budget are not run.
 """
 import asyncio
+import base64
 import json
 import operator
 import os
@@ -72,6 +79,7 @@ MAX_TOOL_CALLS = 8
 HISTORY_TURNS = 3   # Prior user/assistant turns passed to the model
 MAX_SUB_QUESTIONS = 4
 GRADE_SNIPPET_CHARS = 500   # Per chunk, in the grader's view of the results
+MAX_SYNTH_IMAGES = 2        # Page images the complex path attaches for synthesis
 
 CITATION_RULES = (
     "Cite every factual claim inline as [<source> p.<page>] using the source and page "
@@ -83,7 +91,10 @@ SYSTEM_PROMPT = (
     "You answer questions about the user's PDF knowledge base using the tools. "
     "Always search before answering; never answer from general knowledge. "
     "Call list_documents when you need exact file names, e.g. to restrict search_documents "
-    "with `sources`. If the question has several parts, search for each part.\n\n"
+    "with `sources`. If the question has several parts, search for each part. "
+    "When a result's type is image_summary and the question is about a figure, diagram, "
+    "chart or table, call get_page_image to look at the page itself. When a chunk is "
+    "cut off mid-thought, call get_page for the page's full text.\n\n"
     + CITATION_RULES
 )
 FORCE_ANSWER_PROMPT = (
@@ -184,6 +195,7 @@ class Final:
     retrieved: list = field(default_factory=list)   # Every chunk search_documents returned
     route: str = "simple"                           # Path taken: "simple" | "complex"
     plan: Plan | None = None
+    images: list = field(default_factory=list)      # [{"source", "page", "mime_type", "data": bytes}]
 
 
 Event = Plan | ToolCall | ToolResult | Token | Final
@@ -224,7 +236,10 @@ class MCPToolbox:
         return {s["function"]["name"] for s in self.specs}
 
     async def call(self, name: str, args: dict) -> tuple[str, bool, Any]:
-        """(text for the model, is_error, parsed payload or None). Never raises."""
+        """(text for the model, is_error, parsed payload or None). Never raises.
+
+        A result with image blocks has payload {"text", "images": [{"mime_type",
+        "data" (base64)}]}, where text is whatever text blocks came with them."""
         if name not in self.names:
             return f"Unknown tool {name!r}. Available tools: {sorted(self.names)}", True, None
         try:
@@ -234,6 +249,10 @@ class MCPToolbox:
         text = "\n".join(getattr(c, "text", "") for c in res.content)
         if res.is_error:
             return text or f"Tool {name} returned an error.", True, None
+        images = [{"mime_type": c.mime_type, "data": c.data}
+                  for c in res.content if getattr(c, "type", None) == "image"]
+        if images:
+            return text or f"{len(images)} image(s)", False, {"text": text, "images": images}
         payload = res.structured_content
         if isinstance(payload, dict) and set(payload) == {"result"}:
             payload = payload["result"]
@@ -263,6 +282,37 @@ def match_sources(answer: str, chunks: list[dict]) -> list[dict]:
     return [{"source": s, "page": p} for s, p in (cited or retrieved)]
 
 
+# ── Page images ───────────────────────────────────────────────────────────────
+
+def _page_images(args: dict, payload: Any) -> list[dict]:
+    """A get_page_image payload as [{"source", "page", "mime_type", "data" (base64)}]."""
+    if not isinstance(payload, dict):
+        return []
+    return [{"source": args.get("source"), "page": args.get("page"), **img}
+            for img in payload.get("images", [])]
+
+
+def _image_message(images: list[dict]) -> HumanMessage:
+    """Page images as one user message, so Gemini sees them as image input."""
+    content = []
+    for img in images:
+        content.append({"type": "text", "text": f"Page image of {img['source']} p.{img['page']}:"})
+        content.append({"type": "image_url",
+                        "image_url": {"url": f"data:{img['mime_type']};base64,{img['data']}"}})
+    return HumanMessage(content=content)
+
+
+def _final_images(images: list[dict]) -> list[dict]:
+    """One decoded image per (source, page), in the order the agent looked."""
+    out = {}
+    for img in images:
+        out.setdefault((img["source"], img["page"]), {
+            "source": img["source"], "page": img["page"], "mime_type": img["mime_type"],
+            "data": base64.b64decode(img["data"]),
+        })
+    return list(out.values())
+
+
 # ── Graph ─────────────────────────────────────────────────────────────────────
 
 class AgentState(TypedDict):
@@ -279,6 +329,7 @@ class AgentState(TypedDict):
     plan: Plan | None
     findings: Annotated[list[dict], operator.add]  # {"id", "question", "query", "attempt", "results", "error"}
     retries: list[dict]                            # Sub-questions to search again, with new queries
+    images: Annotated[list[dict], operator.add]    # Page images seen: {"source", "page", "mime_type", "data"}
 
 
 def _text(content) -> str:
@@ -412,14 +463,34 @@ def build_graph(llm, toolbox: MCPToolbox, max_iterations: int, max_tool_calls: i
             return "synthesize"
         return [Send("research", {"sub": s, "attempt": 2}) for s in state["retries"]]
 
+    async def fetch_image(call_id: str, source: str, page: int) -> list[dict]:
+        write = get_stream_writer()
+        args = {"source": source, "page": page}
+        write(ToolCall(call_id, "get_page_image", args))
+        text, is_error, payload = await toolbox.call("get_page_image", args)
+        write(ToolResult(call_id, "get_page_image", text, is_error))
+        return [] if is_error else _page_images(args, payload)
+
     async def synthesize(state: AgentState) -> dict:
         write = get_stream_writer()
+        findings = _merged_findings(state["findings"])
         blocks = [f"## Sub-question {f['id']}: {f['question']}\n{_format_results(f['results'])}"
-                  for f in _merged_findings(state["findings"])]
+                  for f in findings]
+
+        # Look at the pages behind the image summaries found, within the tool budget.
+        pages = list(dict.fromkeys((r["source"], r["page"]) for f in findings for r in f["results"]
+                                   if r.get("type") == "image_summary"))
+        pages = pages[:min(MAX_SYNTH_IMAGES, max(0, max_tool_calls - state["tool_calls"]))]
+        fetched = await asyncio.gather(*(fetch_image(f"synth-img{i}", src, pg)
+                                         for i, (src, pg) in enumerate(pages, start=1)))
+        images = [img for imgs in fetched for img in imgs]
+
         conversation = _conversation(state)
         question = conversation[-1].content
         messages = [SystemMessage(SYNTH_PROMPT), *conversation[:-1],
                     HumanMessage(f"Question: {question}\n\nResearch findings:\n\n" + "\n\n".join(blocks))]
+        if images:
+            messages.append(_image_message(images))
         full = None
         async for chunk in llm.astream(messages):
             if text := _text(chunk.content):
@@ -430,7 +501,8 @@ def build_graph(llm, toolbox: MCPToolbox, max_iterations: int, max_tool_calls: i
             msg = AIMessage(content=msg.content, usage_metadata=msg.usage_metadata)
         in_tok, out_tok = usage(msg)
         return {"messages": [msg], "iterations": 1, "stop_reason": "answered",
-                "input_tokens": in_tok, "output_tokens": out_tok}
+                "input_tokens": in_tok, "output_tokens": out_tok,
+                "tool_calls": len(pages), "images": images}
 
     # ── Tool loop (simple path) ──
 
@@ -470,7 +542,7 @@ def build_graph(llm, toolbox: MCPToolbox, max_iterations: int, max_tool_calls: i
     async def tools(state: AgentState) -> dict:
         write = get_stream_writer()
         start = used = state["tool_calls"]
-        out, retrieved = [], []
+        out, retrieved, images = [], [], []
         for tc in state["messages"][-1].tool_calls:
             write(ToolCall(tc["id"], tc["name"], tc["args"]))
             if used >= max_tool_calls:
@@ -481,9 +553,16 @@ def build_graph(llm, toolbox: MCPToolbox, max_iterations: int, max_tool_calls: i
             write(ToolResult(tc["id"], tc["name"], text, is_error))
             if tc["name"] == "search_documents" and isinstance(payload, list):
                 retrieved += payload
+            new = [] if is_error else _page_images(tc["args"], payload)
+            if new:
+                images += new
+                text = f"{text} (attached below)"
             out.append(ToolMessage(text, tool_call_id=tc["id"], name=tc["name"],
                                    status="error" if is_error else "success"))
-        return {"messages": out, "tool_calls": used - start, "retrieved": retrieved}
+        # Images go after every tool message: Gemini wants all responses to a turn's calls together.
+        if images:
+            out.append(_image_message(images))
+        return {"messages": out, "tool_calls": used - start, "retrieved": retrieved, "images": images}
 
     def after_model(state: AgentState) -> str:
         last = state["messages"][-1]
@@ -538,7 +617,7 @@ async def run_agent(
         "messages": [SystemMessage(SYSTEM_PROMPT), *_history_messages(history), HumanMessage(question)],
         "iterations": 0, "loop_calls": 0, "tool_calls": 0, "stop_reason": "answered",
         "input_tokens": 0, "output_tokens": 0, "retrieved": [],
-        "route": "simple", "plan": None, "findings": [], "retries": [],
+        "route": "simple", "plan": None, "findings": [], "retries": [], "images": [],
     }
     # Supersteps: router, planner, then the loop's model calls (at most
     # max_iterations + 1) and tool steps; the complex path needs only six.
@@ -563,6 +642,7 @@ async def run_agent(
         retrieved=final_state["retrieved"],
         route=final_state["route"],
         plan=final_state["plan"],
+        images=_final_images(final_state["images"]),
     )
 
 
@@ -655,6 +735,8 @@ async def _cli(question: str):
                 print("\n\nSources:")
                 for s in ev.sources:
                     print(f"  - {s['source']} p.{s['page']}")
+                for img in ev.images:
+                    print(f"  [viewed page image] {img['source']} p.{img['page']}")
                 u = ev.usage
                 print(f"\n{ev.route} route · {ev.iterations} model calls · {ev.tool_calls} tool calls · "
                       f"{u['input_tokens']} in / {u['output_tokens']} out tokens · "

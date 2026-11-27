@@ -214,11 +214,15 @@ def _tool_summary(ev: ToolResult) -> str:
         return f"{len(payload)} chunks: {hits}"
     if ev.name == "list_documents" and isinstance(payload, list):
         return f"{len(payload)} documents"
+    if ev.name == "get_page" and isinstance(payload, dict):
+        extra = " + image summary" if payload.get("image_summary") else ""
+        return f"page text, {len(payload.get('text', '')):,} chars{extra}"
     return ev.content[:200]
 
 
-def render_agent_answer(prompt: str, chat_history: list) -> str:
-    """Run the agent, showing tool calls live and streaming the answer. Returns the stored markdown."""
+def render_agent_answer(prompt: str, chat_history: list) -> tuple[str, list]:
+    """Run the agent, showing tool calls live and streaming the answer.
+    Returns (stored markdown, page images as {"data", "caption"})."""
     status = st.status("Agent is working...", expanded=True)
     answer_box = st.empty()
     streamed = ""
@@ -256,7 +260,7 @@ def render_agent_answer(prompt: str, chat_history: list) -> str:
         status.update(label="Agent failed", state="error", expanded=True)
         msg = f"Agent error: {type(e).__name__}: {e}"
         answer_box.error(msg)
-        return msg
+        return msg, []
 
     answer_box.markdown(final.answer)
     limit_note = "" if final.stop_reason == "answered" else f" (stopped: {final.stop_reason.replace('_', ' ')})"
@@ -271,12 +275,16 @@ def render_agent_answer(prompt: str, chat_history: list) -> str:
     sources_md = "\n\n**Sources:**\n" + "\n".join(f"- {s['source']} p.{s['page']}" for s in final.sources)
     if final.sources:
         st.markdown(sources_md)
+    images = [{"data": img["data"], "caption": f"Page viewed: {img['source']} p.{img['page']}"}
+              for img in final.images]
+    for img in images:
+        st.image(img["data"], caption=img["caption"])
     u = final.usage
     st.caption(
         f"{final.iterations} model calls · {u['input_tokens']:,} in / {u['output_tokens']:,} out tokens · "
         f"${u['usd']:.4f}"
     )
-    return final.answer + (sources_md if final.sources else "")
+    return final.answer + (sources_md if final.sources else ""), images
 
 
 # ── App bootstrap ─────────────────────────────────────────────────────────────
@@ -392,10 +400,12 @@ if not active_view or active_view == "Chat":
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-            if "images" in message and message["images"]:
-                for img_path in message["images"]:
-                    if os.path.exists(img_path):
-                        st.image(img_path, caption=os.path.basename(img_path))
+            # File paths (RAG mode) or {"data", "caption"} page images (Agent mode)
+            for img in message.get("images") or []:
+                if isinstance(img, dict):
+                    st.image(img["data"], caption=img["caption"])
+                elif os.path.exists(img):
+                    st.image(img, caption=os.path.basename(img))
 
     if prompt := st.chat_input("Ask a question about the uploaded documents..."):
         st.session_state.messages.append({"role": "user", "content": prompt, "images": []})
@@ -409,9 +419,9 @@ if not active_view or active_view == "Chat":
 
         if chat_mode == "Agent":
             with st.chat_message("assistant"):
-                full_response = render_agent_answer(prompt, chat_history)
+                full_response, agent_images = render_agent_answer(prompt, chat_history)
             st.session_state.messages.append(
-                {"role": "assistant", "content": full_response, "images": []}
+                {"role": "assistant", "content": full_response, "images": agent_images}
             )
             st.stop()
 
