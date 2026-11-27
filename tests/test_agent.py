@@ -91,6 +91,22 @@ def ai(text="", tool_calls=None, tokens=(10, 5)):
     )
 
 
+def _db_ready() -> bool:
+    """Whether the active corpus's index has anything in it (real search results)."""
+    cwd = os.getcwd()
+    try:
+        os.chdir(ROOT)
+        from ingest import get_ingested_files
+        return bool(get_ingested_files())
+    except Exception:
+        return False
+    finally:
+        os.chdir(cwd)
+
+
+needs_db = pytest.mark.skipif(not _db_ready(), reason="vector DB not populated")
+
+
 @pytest.fixture(scope="module")
 def runner():
     r = AgentRunner()
@@ -234,6 +250,7 @@ def test_simple_question_skips_the_planner(runner):
     assert events[-1].route == "simple" and events[-1].answer == "Direct answer."
 
 
+@needs_db
 def test_complex_question_plans_searches_and_synthesizes(runner):
     model = model_of(
         [ai("Combined answer.")],

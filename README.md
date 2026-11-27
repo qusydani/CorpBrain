@@ -234,3 +234,36 @@ Self-hosted [Langfuse](https://langfuse.com) v4 records every agent question as 
 4. Start the app or run `python agent.py "..."`. Traces appear under **Tracing**; chats from one browser session share a session id.
 
 Tracing turns on only when the keys are set and the server answers its health check when the app starts. Otherwise the app runs as usual with tracing silently off, so start Langfuse before the app, or restart the app after starting Langfuse. The first time tracing turns on, the app registers the Gemini 2.5 Flash price from `pricing.py` in the project (**Settings → Models**), so Langfuse's costs match the eval's. The admin password, keys and every database secret have local-only defaults. Override the `LANGFUSE_*` variables listed in `docker-compose.yml` before exposing the stack beyond your machine. To stop it: `docker compose --profile observability down` (add `-v` to delete trace data).
+
+### 9. CI eval gate
+
+`.github/workflows/eval-gate.yml` runs on every pull request that touches Python code, `requirements.txt` or `tests/fixtures/`, and can also be started by hand from the Actions tab. It runs the unit tests (no API calls), rebuilds the fixture index from the committed cache, then runs the gate:
+
+```bash
+CORPBRAIN_CORPUS=fixture python eval.py gate
+```
+
+The gate answers the 10 fixture questions with two arms, the **Agent** and the best plain-RAG config (**Hybrid+Rerank+Ctx**), and grades each answer with the Gemini Flash accuracy judge. RAGAS is skipped. Each arm's accuracy is compared with the committed baseline in `tests/fixtures/eval_baseline.json`, and the job fails if any arm scores below *baseline − tolerance*. It also fails if `tests/fixtures/test_set.json` changed since the baseline was recorded, because the old scores would no longer be comparable. Scores, per-type accuracy, cost and latency go to the job summary, and the full per-question results are uploaded as the `gate-results` artifact.
+
+**Tolerance.** Per arm: max(2 × the run-to-run standard deviation, one question), rounded up to a whole number of questions. On 10 questions accuracy moves in steps of 0.1, so a tolerance below one question would fail on noise. Measured on 2026-11-27:
+
+| Arm | Baseline runs | Mean | Std | Tolerance | Fails below |
+|---|---|---|---|---|---|
+| Hybrid+Rerank+Ctx | 0.9, 0.9, 0.9 | 0.90 | 0.00 | 0.10 | 0.80 |
+| Agent | 1.0, 1.0, 1.0 | 1.00 | 0.00 | 0.10 | 0.90 |
+
+The next check run scored Hybrid+Rerank+Ctx at 1.0, so the runs aren't noise-free. The one-question floor absorbs that: a std of 0.05 over the 4 runs still gives a 0.10 tolerance. With a deliberate regression (retrieval `TOP_N` cut from 5 to 1), the gate failed: Hybrid+Rerank+Ctx dropped to 0.60 (multi-hop 0.25). The agent held at 1.00, because it searches several times per question.
+
+**Cost.** About **$0.09–0.10 per gate run** (4 runs: $0.085, $0.094, $0.086, $0.099), plus ~$0.007 of embeddings to rebuild the index. About 78% is the agent and almost all of it is answer generation (Flash thinking tokens). The accuracy judge costs about $0.003. A run takes about 6 minutes after dependencies are installed.
+
+**Setup (once):**
+1. **Secret:** GitHub repo → Settings → Secrets and variables → Actions → *New repository secret*: `GOOGLE_API_KEY`. No Anthropic key is needed. Pull requests from forks don't receive secrets, so the gate fails on them with a clear error. Run those by hand after review.
+2. **Make it block merges:** Settings → Branches (or Rules → Rulesets) → add a rule for `main` → *Require status checks to pass before merging* → add the `eval-gate` check. The check name appears after the workflow has run once. Without this the gate only reports and doesn't block anything.
+
+**Updating the baseline.** Update it only when a change is meant to move the scores (a better prompt, a new tool, an edited fixture test set), not to make a red gate go green:
+
+```bash
+CORPBRAIN_CORPUS=fixture python eval.py gate --update-baseline --runs 3   # ~$0.27
+```
+
+This reruns both arms 3 times and rewrites `tests/fixtures/eval_baseline.json` with the runs, mean, std, tolerance and test-set hash. Commit it in the same PR as the change that caused it, so the diff shows the score change for review. PowerShell: `$env:CORPBRAIN_CORPUS="fixture"; python eval.py gate --update-baseline --runs 3`.

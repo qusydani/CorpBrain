@@ -1,0 +1,45 @@
+{
+  "created": "2026-11-27T22:59:41",
+  "test_set": "tests/fixtures/test_set.json",
+  "test_set_sha256": "33ed210b2aeabe1116418d0ee38be8ff85ac885d4792f755dba1492fb4afec5b",
+  "n_questions": 10,
+  "tolerance_rule": "max(2 x stdev of runs, 1/n), rounded up to a multiple of 1/n",
+  "arms": {
+    "Hybrid+Rerank+Ctx": {
+      "accuracy": 0.9,
+      "runs": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "std": 0.0,
+      "tolerance": 0.1,
+      "by_type": {
+        "single-hop": 1.0,
+        "multi-hop": 0.75
+      }
+    },
+    "Agent": {
+      "accuracy": 1.0,
+      "runs": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "std": 0.0,
+      "tolerance": 0.1,
+      "by_type": {
+        "single-hop": 1.0,
+        "multi-hop": 1.0
+      }
+    }
+  },
+  "cost_per_run_usd": {
+    "mean": 0.088487,
+    "runs": [
+      0.085154,
+      0.094357,
+      0.085951
+    ]
+  }
+}

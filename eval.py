@@ -15,6 +15,8 @@ CLI usage:
                        [--dev N]            # Balanced single/multi-hop dev subset of N
                        [--limit N]          # Only the first N questions
                        [--out PATH]         # Results file (default eval_data/eval_results.json)
+    python eval.py gate [--update-baseline [--runs 3]]
+                                            # CI gate on the fixture corpus (see gate.py)
 
 Requires: pip install ragas>=0.2.0
 """
@@ -881,7 +883,7 @@ def _agent_samples(
 
 def _score_samples(
     samples: list, label: str, judge_llm, ragas_llm, ragas_emb, progress_callback=None,
-    ragas_timeout: int = RAGAS_TIMEOUT,
+    ragas_timeout: int = RAGAS_TIMEOUT, ragas: bool = True,
 ) -> dict:
     """
     Score answered samples the same way for every arm: accuracy judge, RAGAS,
@@ -890,6 +892,8 @@ def _score_samples(
 
     Cost covers every LLM call: answer generation, accuracy judge and RAGAS judge.
     RAGAS usage is only observable per config, so it's split evenly across questions.
+    ragas=False skips RAGAS (the CI gate scores accuracy only); the aggregate then
+    holds accuracy alone and the RAGAS cost is 0.
     """
     # ── Accuracy judge ────────────────────────────────────────────────────────
     for i, s in enumerate(samples):
@@ -905,10 +909,12 @@ def _score_samples(
         s["tokens"].update(accuracy_judge_in=acc_in, accuracy_judge_out=acc_out)
 
     # ── RAGAS scoring (batch — one evaluate() call per config) ────────────────
-    if progress_callback:
-        progress_callback(f"[{label}] Scoring with RAGAS...", 0.95)
-
-    aggregate, per_q, ragas_usage = _run_ragas(samples, ragas_llm, ragas_emb, timeout=ragas_timeout)
+    if ragas:
+        if progress_callback:
+            progress_callback(f"[{label}] Scoring with RAGAS...", 0.95)
+        aggregate, per_q, ragas_usage = _run_ragas(samples, ragas_llm, ragas_emb, timeout=ragas_timeout)
+    else:
+        aggregate, per_q, ragas_usage = {}, [{} for _ in samples], UsageTracker()
 
     # ── Accuracy ──────────────────────────────────────────────────────────────
     graded = [s["accuracy"] for s in samples if s["accuracy"] is not None]
@@ -1158,6 +1164,13 @@ if __name__ == "__main__":
     run_p.add_argument("--agent-only", action="store_true", help="Run only the agent arm")
     run_p.add_argument("--out", default=RESULTS_PATH, help=f"Results file (default: {RESULTS_PATH})")
 
+    gate_p = sub.add_parser("gate", help="CI gate: agent + best RAG config accuracy vs the committed "
+                                         "baseline (fixture corpus only; exits 1 on a regression)")
+    gate_p.add_argument("--update-baseline", action="store_true",
+                        help="Run the arms --runs times and rewrite the baseline instead of checking")
+    gate_p.add_argument("--runs", type=int, default=3, help="Runs for --update-baseline (default: 3)")
+    gate_p.add_argument("--baseline", default=None, help="Baseline file (default: tests/fixtures/eval_baseline.json)")
+
     args = parser.parse_args()
 
     def cli_cb(msg: str, frac: float):
@@ -1269,6 +1282,12 @@ if __name__ == "__main__":
         total_usd = sum(r.get("cost", {}).get("total_usd", 0) for r in results["configs"])
         print(f"\nTotal LLM cost recorded in this file: ${total_usd:.5f}")
         print(f"Full results → {args.out}")
+
+    elif args.command == "gate":
+        import gate
+        raise SystemExit(gate.main(update_baseline=args.update_baseline, runs=args.runs,
+                                   baseline_path=args.baseline or gate.BASELINE_PATH,
+                                   progress_callback=cli_cb))
 
     else:
         parser.print_help()
