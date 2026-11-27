@@ -1,0 +1,18 @@
+# Keep secrets, personal documents and local indexes out of the image;
+# they are mounted at runtime instead (docker-compose.yml).
+.env
+secrets.txt
+.git
+.github
+.venv
+.history
+__pycache__
+**/__pycache__
+*.pyc
+*.log
+data
+eval_data
+extracted_images
+vector_db*
+docs
+tests/*.py

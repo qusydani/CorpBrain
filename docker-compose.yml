@@ -1,5 +1,13 @@
 # CorpBrain services.
 #
+# The app (Streamlit + agent + MCP server) runs by default:
+#
+#     docker compose up --build                        # app at http://localhost:8501
+#
+# The agent spawns mcp_server.py over stdio inside the same container. Documents,
+# vector DBs, extracted images and eval results are bind-mounted from this folder,
+# so ingest/eval runs in the UI write back to your disk. API keys come from .env.
+#
 # Observability (self-hosted Langfuse v4) runs only under its profile:
 #
 #     docker compose --profile observability up -d     # UI at http://localhost:3000
@@ -55,6 +63,36 @@ x-langfuse-env: &langfuse-env
   REDIS_AUTH: ${LANGFUSE_REDIS_PASSWORD:-myredissecret} # CHANGEME
 
 services:
+  app:
+    build: .
+    image: corpbrain-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Inside the compose network Langfuse is langfuse-web, not localhost.
+      # (Media uploads still point at localhost:9090; text traces don't use them.)
+      LANGFUSE_BASE_URL: http://langfuse-web:3000
+      # Same defaults as the project langfuse-web creates on first boot. Without
+      # the profile the health check fails fast and tracing stays off.
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-corpbrain-local}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-corpbrain-local}
+      CORPBRAIN_CORPUS: ${CORPBRAIN_CORPUS:-default}
+    ports:
+      - 127.0.0.1:8501:8501
+    volumes:
+      - ./data:/app/data
+      - ./vector_db:/app/vector_db
+      - ./vector_db_baseline:/app/vector_db_baseline
+      - ./vector_db_fixture:/app/vector_db_fixture
+      - ./extracted_images:/app/extracted_images
+      - ./eval_data:/app/eval_data
+    depends_on:
+      # Tracing is decided once at startup, so under --profile observability wait
+      # for Langfuse to be healthy. Without the profile this is skipped.
+      langfuse-web:
+        condition: service_healthy
+        required: false
+
   langfuse-worker:
     profiles: [observability]
     image: docker.langfuse.com/langfuse/langfuse-worker:${LANGFUSE_IMAGE_TAG:-4}
@@ -69,6 +107,13 @@ services:
     depends_on: *langfuse-depends-on
     ports:
       - 127.0.0.1:3000:3000
+    healthcheck:
+      # The image has no wget/curl; Next.js listens on the container hostname.
+      test: ["CMD", "node", "-e", "fetch('http://'+require('os').hostname()+':3000/api/public/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
     environment:
       <<: *langfuse-env
       NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-corpbrain-local-secret} # CHANGEME

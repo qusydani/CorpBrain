@@ -126,7 +126,7 @@ Query
 ## Installation & Setup
 
 ### Prerequisites
-- Python 3.9+
+- Python 3.11+ (or just Docker, see "Run it with Docker" below)
 - A Google Gemini API Key
 - An Anthropic API Key
 
@@ -153,6 +153,19 @@ streamlit run app.py
 ```
 
 Upload PDFs via the sidebar, click **Ingest Documents**, then ask questions in the **Chat** tab. Use **Explore** to visualize your knowledge base in 3D, and **Eval** to benchmark retrieval configurations.
+
+#### Or run it with Docker
+
+```bash
+cp .env.example .env          # then fill in GOOGLE_API_KEY / ANTHROPIC_API_KEY
+docker compose up --build     # app at http://localhost:8501
+```
+
+One image holds the Streamlit app, the agent and the MCP server. The agent starts `mcp_server.py` over stdio inside the same container, so Agent mode works with no extra setup. The image uses CPU-only torch and has the cross-encoder reranker built in, so nothing downloads at startup. `data/`, `vector_db/`, `vector_db_baseline/`, `vector_db_fixture/`, `extracted_images/` and `eval_data/` are mounted from the repo folder, so the app reads your existing index and anything you ingest or evaluate in the UI is saved to your disk. API keys come from `.env`. None of it is baked into the image.
+
+- **With tracing:** `docker compose --profile observability up --build` also starts Langfuse (see section 8), and the app waits for it to be healthy so agent traces show up at http://localhost:3000. Inside the compose network the app reaches Langfuse at `langfuse-web:3000`, so you don't need to change `LANGFUSE_BASE_URL` in `.env`. The project keys default to the same values on both sides, so `.env` needs no `LANGFUSE_*` entries unless you override them.
+- **Public corpus only:** `CORPBRAIN_CORPUS=fixture docker compose up` runs on the committed fixture PDFs (build the index first, see section 7).
+- **Stop:** `docker compose down` (add `--profile observability` to stop Langfuse as well).
 
 ### 5. MCP Server (optional)
 
