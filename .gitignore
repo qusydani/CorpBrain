@@ -16,3 +16,7 @@ data/
 extracted_images/
 *.json
 !tests/fixtures/*.json
+# Fixture corpus (public PDFs for CI): indexes are rebuilt, the LLM cache is committed
+vector_db_fixture/
+vector_db_fixture_baseline/
+!tests/fixtures/corpus/cache/chunk_contexts.json

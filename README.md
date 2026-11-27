@@ -23,7 +23,7 @@ CorpBrain is a **production-grade Multimodal Retrieval-Augmented Generation (RAG
 ## Key Features
 
 ### Ingestion
-- **Multimodal Vision Summarization** — Rasterizes PDF pages with embedded images (charts, diagrams, schematics) and sends them to **Claude Haiku** for rich, verbatim-aware text summaries; pure text pages skip vision for efficiency.
+- **Multimodal Vision Summarization** — Rasterizes PDF pages with embedded images or vector-drawn charts and sends them to **Claude Haiku** (or Gemini Flash with `--llm gemini`) for rich, verbatim-aware text summaries; pure text pages skip vision for efficiency.
 - **Contextual Chunking** — Implements Anthropic's contextual retrieval technique: calls Claude Haiku to prepend a 1-sentence situating context to every chunk before embedding, boosting retrieval precision and recall.
 - **Deduplication** — MD5 file hashing prevents re-ingesting the same document, chunk-level context caching avoids redundant LLM calls on re-ingestion.
 
@@ -189,7 +189,34 @@ python agent.py "Compare Enterprise Singapore's internationalisation support wit
 
 Tool calls and stats go to stderr; the streamed answer and its sources go to stdout.
 
-### 7. Tracing with Langfuse (optional)
+### 7. Fixture corpus (public PDFs, used by CI)
+
+`data/` holds personal documents and is never committed. For CI there is a small public corpus in `tests/fixtures/`:
+
+- `corpus/pdfs/`: the FY2026 Singapore Budget Statement (82 pages) and a journal article on global energy demand (11 pages).
+- `corpus/cache/`: Gemini Flash outputs from ingestion (one vision summary, plus `chunk_contexts.json` with a context sentence for each chunk). They're committed because LLM output differs from run to run. Rebuilding from them makes no LLM calls and gives the same chunks every time.
+- `test_set.json`: 10 frozen questions (6 single-hop, 4 multi-hop: comparison, aggregation, multi-part). There are no cross-document questions because the two PDFs are unrelated, and generated cross-document pairs came out speculative.
+
+`CORPBRAIN_CORPUS=fixture` points ingestion, retrieval, the MCP server and the eval at the fixture corpus. Its index goes in `vector_db_fixture/` and its results go in `eval_data/eval_results_fixture.json`. In fixture mode ingestion uses Gemini by default, so you only need `GOOGLE_API_KEY`.
+
+```bash
+# bash
+CORPBRAIN_CORPUS=fixture python ingest.py            # build the fixture index
+CORPBRAIN_CORPUS=fixture python eval.py run --agent  # eval on the fixture set
+# PowerShell
+$env:CORPBRAIN_CORPUS="fixture"; python ingest.py
+```
+
+Ingestion cost for the fixture corpus (Gemini 2.5 Flash list prices, embeddings estimated at 4 characters per token):
+
+| Build | LLM calls | LLM cost | Embeddings (176 chunks) | Total |
+|---|---|---|---|---|
+| From scratch (no cache) | 176 | $0.060 | $0.007 | **~$0.067** |
+| From the committed cache | 0 | $0 | $0.007 | **~$0.007** |
+
+`python ingest.py --llm gemini|anthropic` picks the vision and context model for either corpus. The default corpus still uses Claude Haiku.
+
+### 8. Tracing with Langfuse (optional)
 
 Self-hosted [Langfuse](https://langfuse.com) v4 records every agent question as one trace: each Gemini call is a generation with its tokens, $ cost and latency, and each MCP tool call (`search_documents`, `get_page`, `get_page_image`, `list_documents`) is a tool span with its arguments, result and latency. Requires Docker and Python 3.11+ (for the `langfuse` SDK).
 

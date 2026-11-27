@@ -10,8 +10,8 @@ import plotly.colors as pc
 from umap import UMAP
 from rag import get_hybrid_chain
 from agent import AgentRunner, Final, Plan, Token, ToolCall, ToolResult
+from corpus import DATA_PATH, DB_PATH
 from ingest import (
-    DB_PATH,
     CHROMA_COLLECTION,
     compute_file_hash,
     get_existing_hashes,
@@ -34,7 +34,6 @@ from eval import (
     save_test_set,
 )
 
-DATA_PATH = "data/"
 UMAP_CACHE_KEYS = ["umap_coords", "umap_reducer", "umap_texts", "umap_metadata"]
 
 

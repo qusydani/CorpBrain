@@ -40,17 +40,20 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from agent import MAX_ITERATIONS, MAX_TOOL_CALLS
-from ingest import DB_PATH, CHROMA_COLLECTION, IMAGE_OUT_PATH, DATA_PATH
+from corpus import BASELINE_DB_PATH, CORPUS, DATA_PATH, DB_PATH, IMAGE_OUT_PATH, TEST_SET_PATH
+from ingest import CHROMA_COLLECTION
 from pricing import FLASH_MODEL_ID, cost as _cost, usage as _usage
-from retriever import BASELINE_DB_PATH, Retriever, get_embedding_model
+from retriever import Retriever, get_embedding_model
 
 load_dotenv()
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 EVAL_DATA_PATH   = "eval_data"
-TEST_SET_PATH    = os.path.join(EVAL_DATA_PATH, "test_set.json")
-RESULTS_PATH     = os.path.join(EVAL_DATA_PATH, "eval_results.json")
+# Results stay out of git (eval_data/); the fixture corpus gets its own files so a
+# CI run never overwrites the full-corpus results.
+_RESULTS_NAME    = "eval_results.json" if CORPUS == "default" else f"eval_results_{CORPUS}.json"
+RESULTS_PATH     = os.path.join(EVAL_DATA_PATH, _RESULTS_NAME)
 
 # Gemini 2.5 Flash for all eval LLM calls — measures retrieval quality, not LLM capability
 EVAL_LLM_ID = FLASH_MODEL_ID
@@ -198,7 +201,7 @@ def load_test_set() -> Optional[list]:
 
 
 def save_test_set(test_set: list):
-    os.makedirs(EVAL_DATA_PATH, exist_ok=True)
+    os.makedirs(os.path.dirname(TEST_SET_PATH), exist_ok=True)
     with open(TEST_SET_PATH, "w", encoding="utf-8") as f:
         json.dump(test_set, f, ensure_ascii=False, indent=2)
 
@@ -290,7 +293,9 @@ def generate_test_set(n: int = 25, progress_callback=None) -> list:
 
 # ── Multi-hop test set ─────────────────────────────────────────────────────────
 
-MULTIHOP_CANDIDATES_PATH = os.path.join(EVAL_DATA_PATH, "multihop_candidates.json")
+MULTIHOP_CANDIDATES_PATH = os.path.join(
+    EVAL_DATA_PATH, "multihop_candidates.json" if CORPUS == "default" else f"multihop_candidates_{CORPUS}.json"
+)
 
 # Question kinds rotated across the generated set. "group" is how many chunks
 # feed the question; cross-document always pairs chunks from different PDFs.
@@ -1188,7 +1193,12 @@ if __name__ == "__main__":
         with open(MULTIHOP_CANDIDATES_PATH, "r", encoding="utf-8") as f:
             candidates = json.load(f)
         if ts:
-            backup = TEST_SET_PATH.replace(".json", f".backup-{datetime.now():%Y%m%d-%H%M%S}.json")
+            # Backups go to eval_data/ (gitignored), never next to a committed fixture.
+            os.makedirs(EVAL_DATA_PATH, exist_ok=True)
+            backup = os.path.join(
+                EVAL_DATA_PATH,
+                os.path.basename(TEST_SET_PATH).replace(".json", f".backup-{datetime.now():%Y%m%d-%H%M%S}.json"),
+            )
             with open(backup, "w", encoding="utf-8") as f:
                 json.dump(ts, f, ensure_ascii=False, indent=2)
             print(f"Backed up current test set to {backup}")

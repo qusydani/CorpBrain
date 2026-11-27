@@ -18,9 +18,12 @@ from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-from ingest import DB_PATH
+from dotenv import load_dotenv
 
-BASELINE_DB_PATH = "vector_db_baseline"
+from corpus import BASELINE_DB_PATH, DB_PATH
+
+load_dotenv()  # GOOGLE_API_KEY for query embeddings
+
 STRATEGIES = ("dense", "bm25", "hybrid")
 
 EMBEDDING_MODEL_ID = "models/gemini-embedding-001"

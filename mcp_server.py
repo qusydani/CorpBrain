@@ -36,7 +36,8 @@ from mcp_types import TextContent  # noqa: E402
 with contextlib.redirect_stdout(sys.stderr):  # keep import-time chatter off the protocol channel
     import fitz
     from PIL import Image as PILImage
-    from ingest import DATA_PATH, IMAGE_OUT_PATH, get_ingested_files
+    from corpus import DATA_PATH, IMAGE_OUT_PATH
+    from ingest import get_ingested_files
     from retriever import Retriever
 
 RENDER_DPI = 150          # Same as ingest's rasterization

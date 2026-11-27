@@ -1,4 +1,5 @@
 import os
+import argparse
 import base64
 import hashlib
 import io
@@ -9,18 +10,60 @@ from PIL import Image
 from dotenv import load_dotenv
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.messages import HumanMessage
 from langchain_chroma import Chroma
 
+from corpus import CORPUS, DATA_PATH, DB_PATH, DEFAULT_INGEST_LLM, IMAGE_OUT_PATH
+from pricing import FLASH_MODEL_ID, cost as flash_cost, usage as msg_usage
+
 load_dotenv()
 
-DATA_PATH = "data/"
-DB_PATH = "vector_db"
-IMAGE_OUT_PATH = "extracted_images/"
 CHROMA_COLLECTION = "langchain"
 CONTEXT_CACHE_PATH = os.path.join(IMAGE_OUT_PATH, "chunk_contexts.json")
+
+# Which model writes vision summaries and chunk contexts. "gemini" lets ingestion
+# (and so CI) run with only a Google key.
+INGEST_LLMS = ("anthropic", "gemini")
+HAIKU_MODEL_ID = "claude-haiku-4-5-20251001"
+
+# Vector paths on a page at or above which it is treated as a chart/diagram page
+# and sent to vision (table rules and boxes stay well under this).
+VECTOR_CHART_MIN_PATHS = 50
+
+
+def get_ingest_llm(provider: str = DEFAULT_INGEST_LLM):
+    """Chat model for vision summaries and contextual chunking."""
+    if provider == "anthropic":
+        from langchain_anthropic import ChatAnthropic
+        return ChatAnthropic(model=HAIKU_MODEL_ID, temperature=0)
+    if provider == "gemini":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        # Thinking off: descriptive / one-sentence output, and thinking bills as output.
+        return ChatGoogleGenerativeAI(model=FLASH_MODEL_ID, temperature=0, thinking_budget=0)
+    raise ValueError(f"Unknown ingest LLM {provider!r}; expected one of {INGEST_LLMS}")
+
+
+def new_usage() -> dict:
+    """Running totals of the ingest LLM calls, for the cost report."""
+    return {"calls": 0, "input_tokens": 0, "output_tokens": 0, "embedded_chunks": 0, "embedded_chars": 0}
+
+
+def _record(usage: dict | None, message):
+    if usage is None:
+        return
+    i, o = msg_usage(message)
+    usage["calls"] += 1
+    usage["input_tokens"] += i
+    usage["output_tokens"] += o
+
+
+def _text(message) -> str:
+    """Message content as plain text (Gemini can return a list of content blocks)."""
+    content = message.content
+    if isinstance(content, str):
+        return content
+    return "".join(b.get("text", "") if isinstance(b, dict) else str(b) for b in content)
 
 
 # ── Hashing ───────────────────────────────────────────────────────────────────
@@ -107,34 +150,35 @@ def _compress_image_for_api(image_path: str) -> tuple:
     return encoded, "image/jpeg"
 
 
-def summarize_page_image(image_path: str) -> str:
-    llm = ChatAnthropic(model="claude-haiku-4-5-20251001", temperature=0)
+VISION_PROMPT = (
+    "You are an expert document analyst. Describe this page in thorough detail. "
+    "Extract all visible text verbatim. If there are diagrams, charts, tables, or figures, "
+    "explain what they depict, how components relate, and any labels, legends, or annotations. "
+    "Capture all numbered steps, warnings, callouts, and part references exactly as written."
+)
+
+
+def vision_message(image_path: str, provider: str) -> HumanMessage:
+    """The page-image prompt in each provider's image block format."""
     encoded_string, media_type = _compress_image_for_api(image_path)
+    if provider == "anthropic":
+        image_block = {
+            "type": "image",
+            "source": {"type": "base64", "media_type": media_type, "data": encoded_string},
+        }
+    else:
+        image_block = {"type": "image_url", "image_url": f"data:{media_type};base64,{encoded_string}"}
+    return HumanMessage(content=[{"type": "text", "text": VISION_PROMPT}, image_block])
 
-    prompt = (
-        "You are an expert document analyst. Describe this page in thorough detail. "
-        "Extract all visible text verbatim. If there are diagrams, charts, tables, or figures, "
-        "explain what they depict, how components relate, and any labels, legends, or annotations. "
-        "Capture all numbered steps, warnings, callouts, and part references exactly as written."
-    )
 
-    message = HumanMessage(
-        content=[
-            {"type": "text", "text": prompt},
-            {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": media_type,
-                    "data": encoded_string,
-                },
-            },
-        ]
-    )
-
+def summarize_page_image(
+    image_path: str, llm=None, provider: str = DEFAULT_INGEST_LLM, usage: dict | None = None,
+) -> str:
+    llm = llm or get_ingest_llm(provider)
     print(f"Generating vision summary for {image_path}...")
-    response = llm.invoke([message])
-    return response.content
+    response = llm.invoke([vision_message(image_path, provider)])
+    _record(usage, response)
+    return _text(response)
 
 
 # ── Contextual chunking ───────────────────────────────────────────────────────
@@ -145,9 +189,10 @@ def generate_chunk_context(
     source: str,
     page_num: int,
     llm,
+    usage: dict | None = None,
 ) -> str:
     """
-    Call Claude Haiku to generate a single context sentence that situates
+    Call the ingest LLM to generate a single context sentence that situates
     this chunk within its page and document. Based on Anthropic's contextual
     retrieval technique.
     """
@@ -160,21 +205,30 @@ def generate_chunk_context(
         "Output only the sentence, nothing else."
     )
     response = llm.invoke([HumanMessage(content=prompt)])
-    return response.content.strip()
+    _record(usage, response)
+    return _text(response).strip()
 
 
 # ── Core ingestion ────────────────────────────────────────────────────────────
 
-def ingest_pdf_file(pdf_path: str, file_hash: str, progress_callback=None) -> int:
+def ingest_pdf_file(
+    pdf_path: str,
+    file_hash: str,
+    progress_callback=None,
+    llm_provider: str = DEFAULT_INGEST_LLM,
+    usage: dict | None = None,
+) -> int:
     """
     Ingest a single PDF into the existing ChromaDB incrementally.
 
     Pipeline:
       Phase 1 — per page: extract raw text, rasterize, vision summarize
       Phase 2 — chunk text documents only (image summaries kept whole)
-      Phase 3 — contextual chunking: prepend a Haiku-generated context sentence
+      Phase 3 — contextual chunking: prepend an LLM-generated context sentence
       Phase 4 — embed all chunks into ChromaDB
 
+    llm_provider picks the vision/context model ("anthropic" Haiku or "gemini" Flash).
+    usage, if given (see new_usage), accumulates LLM tokens and embedded chunks.
     progress_callback(current, total, status=None) is called to report progress.
     Returns the number of pages ingested.
     """
@@ -188,7 +242,7 @@ def ingest_pdf_file(pdf_path: str, file_hash: str, progress_callback=None) -> in
     doc = fitz.open(pdf_path)
     total_pages = doc.page_count
 
-    llm = ChatAnthropic(model="claude-haiku-4-5-20251001", temperature=0)
+    llm = get_ingest_llm(llm_provider)
 
     # ── Phase 1: Page extraction and vision summarization ─────────────────────
     for page_num in range(total_pages):
@@ -212,9 +266,12 @@ def ingest_pdf_file(pdf_path: str, file_hash: str, progress_callback=None) -> in
         # extracted the text more accurately via get_text(). Pages with embedded
         # images (charts, photos, infographics) still need vision even if they
         # also carry text, because the visual content won't appear in get_text().
+        # Charts drawn as vector graphics have no embedded image, so a page with
+        # many vector paths counts as visual too (a few paths are just rules/boxes).
         has_embedded_images = len(page.get_images(full=True)) > 0
+        has_vector_graphics = len(page.get_drawings()) >= VECTOR_CHART_MIN_PATHS
         has_substantial_text = len(raw_text.strip()) > 100
-        skip_vision = (not has_embedded_images) and has_substantial_text
+        skip_vision = (not has_embedded_images) and (not has_vector_graphics) and has_substantial_text
 
         if skip_vision:
             print(f"  Skipping vision for page {page_num + 1} (text-only, no embedded images)")
@@ -235,7 +292,7 @@ def ingest_pdf_file(pdf_path: str, file_hash: str, progress_callback=None) -> in
             with open(summary_path, "r", encoding="utf-8") as f:
                 page_summary = f.read()
         else:
-            page_summary = summarize_page_image(image_path)
+            page_summary = summarize_page_image(image_path, llm, llm_provider, usage)
             with open(summary_path, "w", encoding="utf-8") as f:
                 f.write(page_summary)
 
@@ -274,7 +331,7 @@ def ingest_pdf_file(pdf_path: str, file_hash: str, progress_callback=None) -> in
             context = context_cache[chunk_key]
         else:
             context = generate_chunk_context(
-                chunk.page_content, page_text, file, page_num, llm
+                chunk.page_content, page_text, file, page_num, llm, usage
             )
             context_cache[chunk_key] = context
 
@@ -300,19 +357,49 @@ def ingest_pdf_file(pdf_path: str, file_hash: str, progress_callback=None) -> in
     for i in range(0, len(all_chunks), batch_size):
         vector_db.add_documents(all_chunks[i : i + batch_size])
 
+    if usage is not None:
+        usage["embedded_chunks"] += len(all_chunks)
+        usage["embedded_chars"] += sum(len(c.page_content) for c in all_chunks)
+
     print(f"Ingested {total_pages} pages from {file}.")
     return total_pages
 
 
-def create_multimodal_vector_db():
-    """CLI entry point: scan data/ and ingest any PDFs not yet in ChromaDB."""
-    print(f"Scanning {DATA_PATH} for new documents...")
+# gemini-embedding-001 list price, USD per input token. The embeddings API returns
+# no token counts, so the report estimates tokens as characters / 4.
+EMBED_PRICE_PER_TOKEN = 0.15 / 1_000_000
+
+
+def cost_report(usage: dict, provider: str) -> str:
+    embed_tokens = usage["embedded_chars"] / 4
+    embed_usd = embed_tokens * EMBED_PRICE_PER_TOKEN
+    lines = [
+        f"LLM ({provider}): {usage['calls']} calls, "
+        f"{usage['input_tokens']:,} in / {usage['output_tokens']:,} out tokens",
+    ]
+    if provider == "gemini":
+        lines[0] += f" = ${flash_cost(usage['input_tokens'], usage['output_tokens']):.4f}"
+        total = flash_cost(usage["input_tokens"], usage["output_tokens"]) + embed_usd
+    else:
+        total = None
+    lines.append(
+        f"Embeddings: {usage['embedded_chunks']} chunks, ~{embed_tokens:,.0f} tokens = ~${embed_usd:.4f}"
+    )
+    if total is not None:
+        lines.append(f"Total: ~${total:.4f}")
+    return "\n".join(lines)
+
+
+def create_multimodal_vector_db(llm_provider: str = DEFAULT_INGEST_LLM):
+    """CLI entry point: scan the corpus folder and ingest any PDFs not yet in ChromaDB."""
+    print(f"[{CORPUS} corpus] Scanning {DATA_PATH} for new documents (ingest LLM: {llm_provider})...")
     os.makedirs(IMAGE_OUT_PATH, exist_ok=True)
 
     existing_hashes = get_existing_hashes()
     new_files = 0
+    usage = new_usage()
 
-    for file in os.listdir(DATA_PATH):
+    for file in sorted(os.listdir(DATA_PATH)):
         if not file.endswith(".pdf"):
             continue
         pdf_path = os.path.join(DATA_PATH, file)
@@ -324,14 +411,21 @@ def create_multimodal_vector_db():
             continue
 
         print(f"Ingesting {file}...")
-        ingest_pdf_file(pdf_path, file_hash)
+        ingest_pdf_file(pdf_path, file_hash, llm_provider=llm_provider, usage=usage)
         new_files += 1
 
     if new_files == 0:
         print("No new documents to ingest.")
     else:
         print(f"Done. Ingested {new_files} new document(s).")
+        print(cost_report(usage, llm_provider))
+    return usage
 
 
 if __name__ == "__main__":
-    create_multimodal_vector_db()
+    parser = argparse.ArgumentParser(description="Ingest the corpus PDFs into ChromaDB.")
+    parser.add_argument(
+        "--llm", choices=INGEST_LLMS, default=DEFAULT_INGEST_LLM,
+        help=f"Model for vision summaries and contextual chunking (default for this corpus: {DEFAULT_INGEST_LLM})",
+    )
+    create_multimodal_vector_db(parser.parse_args().llm)

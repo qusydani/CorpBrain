@@ -211,7 +211,12 @@ class MCPToolbox:
     """
 
     def __init__(self, server_script: str = SERVER_SCRIPT):
-        self._params = StdioServerParameters(command=sys.executable, args=[server_script], cwd=ROOT)
+        # Pass the full environment: the mcp library's default forwards only a few
+        # system variables, which would drop CORPBRAIN_CORPUS and, in CI where there is
+        # no .env file, GOOGLE_API_KEY.
+        self._params = StdioServerParameters(
+            command=sys.executable, args=[server_script], cwd=ROOT, env=dict(os.environ),
+        )
         self._stack = AsyncExitStack()
         self.session: ClientSession | None = None
         self.specs: list[dict] = []
